@@ -11,7 +11,7 @@ buildscript {
     ext.PLUGIN_VERSION = "0.1"
     ext.ATAK_VERSION = "5.5.0"
 
-    def takdevVersion = '2.+'
+    def takdevVersion = '3.+'
 
     def getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -42,6 +42,12 @@ buildscript {
     ext.takrepoUser = getProperty('takrepo.user', 'invalid')
     ext.takrepoPassword = getProperty('takrepo.password', 'invalid')
     ext.takdevPlugin = getProperty('takdev.plugin', "${rootDir}/../../atak-gradle-takdev.jar")
+
+    // Keystore configuration - should be defined in local.properties
+    ext.keystoreFile = getProperty('keystore.file', "${buildDir}/android_keystore")
+    ext.keystorePassword = getProperty('keystore.password', 'android')
+    ext.keyAlias = getProperty('key.alias', 'androiddebugkey')
+    ext.keyPassword = getProperty('key.password', 'android')
 
     repositories {
         google()
@@ -82,7 +88,8 @@ allprojects {
 
 apply plugin: 'com.android.application'
 apply plugin: 'atak-takdev-plugin'
-apply from: "../gradle/typst.gradle"
+// Typst documentation build disabled for TAK pipeline submission
+// apply from: "../gradle/typst.gradle"
 
 
  
@@ -140,16 +147,16 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file("${buildDir}/android_keystore")
-            storePassword "tnttnt"
-            keyAlias "wintec_mapping"
-            keyPassword "tnttnt"
+            storeFile file(keystoreFile)
+            storePassword keystorePassword
+            keyAlias keyAlias
+            keyPassword keyPassword
         }
         release {
-            storeFile file("${buildDir}/android_keystore")
-            storePassword "tnttnt"
-            keyAlias "wintec_mapping"
-            keyPassword "tnttnt"
+            storeFile file(keystoreFile)
+            storePassword keystorePassword
+            keyAlias keyAlias
+            keyPassword keyPassword
         }
     }
 
