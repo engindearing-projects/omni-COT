@@ -26,6 +26,7 @@ public class DashboardActivity {
     private final Context context;
     private final MapView mapView;
     private final View dashboardView;
+    private final OmniCOTDropDownReceiver receiver;
 
     // UI Components
     private TextView txtActiveAOIs;
@@ -43,10 +44,11 @@ public class DashboardActivity {
     private static int cotModifiedCount = 0;
     private static List<String> recentActivities = new ArrayList<>();
 
-    public DashboardActivity(Context context, MapView mapView, View dashboardView) {
+    public DashboardActivity(Context context, MapView mapView, View dashboardView, OmniCOTDropDownReceiver receiver) {
         this.context = context;
         this.mapView = mapView;
         this.dashboardView = dashboardView;
+        this.receiver = receiver;
 
         initializeUI();
         updateStats();
@@ -137,19 +139,25 @@ public class DashboardActivity {
 
     private int getAOICount() {
         try {
-            MapGroup root = mapView.getRootGroup();
-            int count = 0;
+            // Get the Drawing Objects group where shapes are stored
+            MapGroup drawingGroup = mapView.getRootGroup().findMapGroup("Drawing Objects");
+            if (drawingGroup == null) {
+                Log.d(TAG, "Drawing Objects group not found");
+                return 0;
+            }
 
-            // Count all Shape items in the map
-            Collection<com.atakmap.android.maps.MapItem> items = root.deepFindItems("type", "shape");
+            int count = 0;
+            Collection<com.atakmap.android.maps.MapItem> items = drawingGroup.deepFindItems("type", "shape");
             if (items != null) {
                 for (com.atakmap.android.maps.MapItem item : items) {
                     if (item instanceof Shape) {
                         count++;
+                        Log.d(TAG, "Found AOI: " + item.getTitle());
                     }
                 }
             }
 
+            Log.d(TAG, "Total AOIs found: " + count);
             return count;
         } catch (Exception e) {
             Log.e(TAG, "Error counting AOIs", e);
@@ -176,16 +184,17 @@ public class DashboardActivity {
     }
 
     private void onCOTManagementClick() {
-        Toast.makeText(context, "Opening COT Management", Toast.LENGTH_SHORT).show();
-        // Open the original COT management view
-        // This would be implemented by switching views or opening a new dropdown
         Log.d(TAG, "COT Management clicked");
+        if (receiver != null) {
+            receiver.showCOTManagement();
+        }
     }
 
     private void onAOIManagementClick() {
-        Toast.makeText(context, "Opening AOI Management", Toast.LENGTH_SHORT).show();
-        // Open the AOI management view
         Log.d(TAG, "AOI Management clicked");
+        if (receiver != null) {
+            receiver.showAOIManagement();
+        }
     }
 
     private void onCreateAlertClick() {

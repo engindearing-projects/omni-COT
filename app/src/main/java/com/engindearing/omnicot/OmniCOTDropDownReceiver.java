@@ -44,6 +44,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     private final Context pluginContext;
     private final MapView mapView;
     private final View templateView;
+    private View managementView;
     private DashboardActivity dashboardActivity;
 
     // UI Components - COT Affiliation
@@ -64,6 +65,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     private MapItem selectedCotItem;
     private CotDispatcher cotDispatcher;
     private boolean isSelectingCot = false;
+    private boolean showingDashboard = true;
 
     public OmniCOTDropDownReceiver(final MapView mapView, final Context context, View templateView) {
         super(mapView);
@@ -75,24 +77,123 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         cotDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
 
         // Initialize dashboard
-        dashboardActivity = new DashboardActivity(pluginContext, mapView, templateView);
+        dashboardActivity = new DashboardActivity(pluginContext, mapView, templateView, this);
 
         initializeUI();
     }
 
     private void initializeUI() {
-        // Note: Dashboard UI is handled by DashboardActivity
-        // The dashboard replaces the old main_layout.xml
+        // Inflate the management view
+        managementView = android.view.LayoutInflater.from(pluginContext)
+                .inflate(R.layout.main_layout, null);
 
-        Log.d(TAG, "Dashboard initialized");
-        // Old UI components removed - using dashboard now
-        // Setup button listeners for dashboard handled in DashboardActivity
+        // Initialize management UI components
+        initializeManagementComponents();
+
+        Log.d(TAG, "Dashboard and management views initialized");
+    }
+
+    private void initializeManagementComponents() {
+        // COT Management components
+        btnSelectCot = managementView.findViewById(R.id.btnSelectCot);
+        cotAffiliationSection = managementView.findViewById(R.id.cotAffiliationSection);
+        selectedCotInfo = managementView.findViewById(R.id.selectedCotInfo);
+        spinnerAffiliation = managementView.findViewById(R.id.spinnerAffiliation);
+        spinnerDimension = managementView.findViewById(R.id.spinnerDimension);
+        btnUpdateAffiliation = managementView.findViewById(R.id.btnUpdateAffiliation);
+
+        // AOI Management components
+        btnRefreshAoi = managementView.findViewById(R.id.btnRefreshAoi);
+        aoiRecyclerView = managementView.findViewById(R.id.aoiRecyclerView);
+        btnCreateAoi = managementView.findViewById(R.id.btnCreateAoi);
+
+        // Setup spinners
+        setupSpinners();
+
+        // Setup RecyclerView
+        aoiAdapter = new AOIAdapter(pluginContext);
+        aoiRecyclerView.setLayoutManager(new LinearLayoutManager(pluginContext));
+        aoiRecyclerView.setAdapter(aoiAdapter);
+
+        // Setup button listeners
         setupButtonListeners();
     }
 
+    private void setupSpinners() {
+        // Affiliation spinner
+        String[] affiliations = {"Friendly (f)", "Neutral (n)", "Hostile (h)", "Unknown (u)"};
+        ArrayAdapter<String> affiliationAdapter = new ArrayAdapter<>(
+                pluginContext, android.R.layout.simple_spinner_item, affiliations);
+        affiliationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerAffiliation.setAdapter(affiliationAdapter);
+
+        // Dimension spinner
+        String[] dimensions = {"Point (P)", "Air (A)", "Ground (G)", "Sea (S)", "Subsurface (U)"};
+        ArrayAdapter<String> dimensionAdapter = new ArrayAdapter<>(
+                pluginContext, android.R.layout.simple_spinner_item, dimensions);
+        dimensionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerDimension.setAdapter(dimensionAdapter);
+    }
+
     private void setupButtonListeners() {
-        // Button listeners now handled by DashboardActivity
-        // Keeping methods for future integration
+        // COT Management buttons
+        btnSelectCot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startCotSelection();
+            }
+        });
+
+        btnUpdateAffiliation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateCotAffiliation();
+            }
+        });
+
+        // AOI Management buttons
+        btnRefreshAoi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                refreshAOIList();
+            }
+        });
+
+        btnCreateAoi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createNewAOI();
+            }
+        });
+    }
+
+    public void showCOTManagement() {
+        showingDashboard = false;
+        setRetain(true);
+        closeDropDown();
+        showDropDown(managementView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH, HALF_HEIGHT, false, this);
+        Log.d(TAG, "Switched to COT Management view");
+    }
+
+    public void showAOIManagement() {
+        showingDashboard = false;
+        setRetain(true);
+        closeDropDown();
+        showDropDown(managementView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH, HALF_HEIGHT, false, this);
+        // Automatically refresh the AOI list when opening
+        refreshAOIList();
+        Log.d(TAG, "Switched to AOI Management view");
+    }
+
+    public void showDashboard() {
+        showingDashboard = true;
+        setRetain(true);
+        closeDropDown();
+        showDropDown(templateView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH, HALF_HEIGHT, false, this);
+        if (dashboardActivity != null) {
+            dashboardActivity.updateStats();
+        }
+        Log.d(TAG, "Switched to Dashboard view");
     }
 
     private void startCotSelection() {
