@@ -16,6 +16,10 @@ OmniCOT provides tactical teams with enhanced capabilities for managing Cursor o
 
 ## Screenshots
 
+### Dashboard
+
+![OmniCOT Dashboard](screenshots/dashboard.png)
+
 The plugin features a modern dashboard with:
 - Status metrics showing active AOIs, alerts, and CoT modifications
 - Quick action cards for common operations
