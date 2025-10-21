@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Configure AOI Alert"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:id="@+id/alertAoiName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AOI Name"
+            android:textSize="14sp"
+            android:paddingBottom="12dp" />
+
+        <!-- Enable Alert -->
+        <CheckBox
+            android:id="@+id/checkEnableAlert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enable Alert"
+            android:paddingBottom="12dp" />
+
+        <!-- Trigger Type -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trigger Type:"
+            android:paddingTop="4dp" />
+
+        <Spinner
+            android:id="@+id/spinnerTriggerType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/trigger_types"
+            android:paddingBottom="12dp" />
+
+        <!-- Monitored COT Types -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Monitor:"
+            android:paddingTop="4dp" />
+
+        <Spinner
+            android:id="@+id/spinnerMonitoredTypes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/monitored_types"
+            android:paddingBottom="12dp" />
+
+        <!-- Expiration Time -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Alert Duration (hours):"
+            android:paddingTop="4dp" />
+
+        <EditText
+            android:id="@+id/editAlertDuration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="24"
+            android:hint="Duration in hours"
+            android:paddingBottom="12dp" />
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:paddingTop="16dp">
+
+            <Button
+                android:id="@+id/btnCancelAlert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnSaveAlert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

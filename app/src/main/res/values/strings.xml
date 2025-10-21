@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">OmniCOT</string>
+    <!-- description -->
+    <string name="app_desc">OmniCOT plugin for ATAK - Advanced tactical coordination and communication</string>
+
+    <!-- Affiliation options -->
+    <string-array name="affiliation_types">
+        <item>Friendly (f)</item>
+        <item>Neutral (n)</item>
+        <item>Hostile (h)</item>
+        <item>Unknown (u)</item>
+    </string-array>
+
+    <!-- Dimension options -->
+    <string-array name="dimension_types">
+        <item>Point (P)</item>
+        <item>Air (A)</item>
+        <item>Ground (G)</item>
+        <item>Sea/Surface (S)</item>
+        <item>Subsurface (U)</item>
+    </string-array>
+
+    <!-- Trigger types for geofencing -->
+    <string-array name="trigger_types">
+        <item>Entry Only</item>
+        <item>Exit Only</item>
+        <item>Both Entry and Exit</item>
+    </string-array>
+
+    <!-- Monitored COT types -->
+    <string-array name="monitored_types">
+        <item>All COT Types</item>
+        <item>Friendly Only</item>
+        <item>Hostile Only</item>
+        <item>Unknown Only</item>
+    </string-array>
+
+</resources>

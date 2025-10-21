@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fadeScrollbars="false"
+    android:layout_marginLeft="3dp"
+    android:layout_marginRight="3dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingBottom="16dp" />
+
+        <!-- Section 1: COT Affiliation Management -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="COT Affiliation Manager"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnSelectCot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select COT to Modify" />
+
+        <LinearLayout
+            android:id="@+id/cotAffiliationSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:id="@+id/selectedCotInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No COT selected"
+                android:paddingBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Affiliation:"
+                android:paddingTop="4dp" />
+
+            <Spinner
+                android:id="@+id/spinnerAffiliation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dimension:"
+                android:paddingTop="8dp" />
+
+            <Spinner
+                android:id="@+id/spinnerDimension"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btnUpdateAffiliation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Update and Federate"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#CCCCCC"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Section 2: Areas of Interest (AOI) Management -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Areas of Interest (AOI)"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnRefreshAoi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh AOI List" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/aoiRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="200dp"
+            android:paddingTop="8dp" />
+
+        <Button
+            android:id="@+id/btnCreateAoi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create New AOI"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+</ScrollView>
