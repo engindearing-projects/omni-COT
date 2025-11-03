@@ -9,6 +9,7 @@ import com.atakmap.android.dropdown.DropDownMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.log.Log;
 
 public class OmniCOTMapComponent extends DropDownMapComponent {
@@ -17,6 +18,7 @@ public class OmniCOTMapComponent extends DropDownMapComponent {
 
     private Context pluginContext;
     private OmniCOTDropDownReceiver dropDownReceiver;
+    private CotAffiliationListener affiliationListener;
 
     public OmniCOTMapComponent() {
         Log.d(TAG, "OmniCOTMapComponent constructor called");
@@ -41,6 +43,11 @@ public class OmniCOTMapComponent extends DropDownMapComponent {
         ddFilter.addAction(OmniCOTDropDownReceiver.SHOW_PLUGIN, "Show the OmniCOT Dashboard");
         registerDropDownReceiver(dropDownReceiver, ddFilter);
         Log.d(TAG, "Registered OmniCOT DropDownReceiver successfully");
+
+        // Register CoT affiliation listener
+        affiliationListener = new CotAffiliationListener(pluginContext);
+        CommsMapComponent.getInstance().registerCommsLogger(affiliationListener);
+        Log.d(TAG, "Registered CotAffiliationListener for monitoring CoT messages");
     }
 
     @Override
@@ -49,6 +56,13 @@ public class OmniCOTMapComponent extends DropDownMapComponent {
 
         if (dropDownReceiver != null) {
             dropDownReceiver.dispose();
+        }
+
+        // Unregister CoT affiliation listener
+        if (affiliationListener != null) {
+            CommsMapComponent.getInstance().unregisterCommsLogger(affiliationListener);
+            affiliationListener.dispose();
+            Log.d(TAG, "Unregistered CotAffiliationListener");
         }
 
         Log.d(TAG, "OmniCOT MapComponent destroyed");
