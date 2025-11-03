@@ -37,4 +37,12 @@
         <item>Unknown Only</item>
     </string-array>
 
+    <!-- Custom team affiliation tracking options -->
+    <string-array name="custom_affiliation_types">
+        <item>Unknown</item>
+        <item>Assumed Friendly</item>
+        <item>Assumed Hostile</item>
+        <item>Pending</item>
+    </string-array>
+
 </resources>

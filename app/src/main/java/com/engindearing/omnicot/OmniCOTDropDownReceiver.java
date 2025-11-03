@@ -53,6 +53,8 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     private TextView selectedCotInfo;
     private Spinner spinnerAffiliation;
     private Spinner spinnerDimension;
+    private Spinner spinnerCustomAffiliation;
+    private TextView txtAffiliationInfo;
     private Button btnUpdateAffiliation;
 
     // UI Components - AOI
@@ -64,6 +66,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     // State
     private MapItem selectedCotItem;
     private CotDispatcher cotDispatcher;
+    private AffiliationManager affiliationManager;
     private boolean isSelectingCot = false;
     private boolean showingDashboard = true;
 
@@ -75,6 +78,9 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
         // Get COT dispatcher for federating changes
         cotDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
+
+        // Initialize affiliation manager
+        affiliationManager = AffiliationManager.getInstance(pluginContext);
 
         // Initialize dashboard
         dashboardActivity = new DashboardActivity(pluginContext, mapView, templateView, this);
@@ -100,6 +106,8 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         selectedCotInfo = managementView.findViewById(R.id.selectedCotInfo);
         spinnerAffiliation = managementView.findViewById(R.id.spinnerAffiliation);
         spinnerDimension = managementView.findViewById(R.id.spinnerDimension);
+        spinnerCustomAffiliation = managementView.findViewById(R.id.spinnerCustomAffiliation);
+        txtAffiliationInfo = managementView.findViewById(R.id.txtAffiliationInfo);
         btnUpdateAffiliation = managementView.findViewById(R.id.btnUpdateAffiliation);
 
         // AOI Management components
@@ -133,6 +141,13 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
                 pluginContext, android.R.layout.simple_spinner_item, dimensions);
         dimensionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDimension.setAdapter(dimensionAdapter);
+
+        // Custom Affiliation spinner (for team tracking)
+        String[] customAffiliations = {"Unknown", "Assumed Friendly", "Assumed Hostile", "Pending"};
+        ArrayAdapter<String> customAffiliationAdapter = new ArrayAdapter<>(
+                pluginContext, android.R.layout.simple_spinner_item, customAffiliations);
+        customAffiliationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCustomAffiliation.setAdapter(customAffiliationAdapter);
     }
 
     private void setupButtonListeners() {
@@ -229,6 +244,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
         String itemType = item.getType();
         String itemTitle = item.getTitle();
+        String uid = item.getUID();
         selectedCotInfo.setText("Selected: " + itemTitle + " (Type: " + itemType + ")");
 
         // Parse current affiliation and dimension
@@ -244,7 +260,41 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
             }
         }
 
+        // Check for stored affiliation data
+        AffiliationData storedAffiliation = affiliationManager.getAffiliation(uid);
+        if (storedAffiliation != null) {
+            // Set custom affiliation spinner
+            setCustomAffiliationSpinner(storedAffiliation.getAffiliation());
+
+            // Display affiliation info
+            String infoText = "Team Affiliation: " + storedAffiliation.getAffiliation().getValue();
+            if (storedAffiliation.getMarkedBy() != null && !storedAffiliation.getMarkedBy().isEmpty()) {
+                infoText += "\nMarked by: " + storedAffiliation.getMarkedBy();
+            }
+            if (storedAffiliation.getNotes() != null && !storedAffiliation.getNotes().isEmpty()) {
+                infoText += "\nNotes: " + storedAffiliation.getNotes();
+            }
+            txtAffiliationInfo.setText(infoText);
+            txtAffiliationInfo.setVisibility(View.VISIBLE);
+        } else {
+            // No stored affiliation, set to default
+            spinnerCustomAffiliation.setSelection(0); // Unknown
+            txtAffiliationInfo.setText("No team affiliation data");
+            txtAffiliationInfo.setVisibility(View.VISIBLE);
+        }
+
         Log.d(TAG, "COT selected: " + itemTitle + " (" + itemType + ")");
+    }
+
+    private void setCustomAffiliationSpinner(AffiliationData.Affiliation affiliation) {
+        int position = 0;
+        switch (affiliation) {
+            case UNKNOWN: position = 0; break;
+            case ASSUMED_FRIENDLY: position = 1; break;
+            case ASSUMED_HOSTILE: position = 2; break;
+            case PENDING: position = 3; break;
+        }
+        spinnerCustomAffiliation.setSelection(position);
     }
 
     private void setSpinnerByAffiliation(String affiliation) {
@@ -279,20 +329,39 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         // Get selected affiliation and dimension
         int affiliationPos = spinnerAffiliation.getSelectedItemPosition();
         int dimensionPos = spinnerDimension.getSelectedItemPosition();
+        int customAffiliationPos = spinnerCustomAffiliation.getSelectedItemPosition();
 
         char[] affiliations = {'f', 'n', 'h', 'u'};
         char[] dimensions = {'P', 'A', 'G', 'S', 'U'};
 
         String newType = "a-" + affiliations[affiliationPos] + "-" + dimensions[dimensionPos];
 
+        // Get custom affiliation
+        AffiliationData.Affiliation customAffiliation;
+        switch (customAffiliationPos) {
+            case 1: customAffiliation = AffiliationData.Affiliation.ASSUMED_FRIENDLY; break;
+            case 2: customAffiliation = AffiliationData.Affiliation.ASSUMED_HOSTILE; break;
+            case 3: customAffiliation = AffiliationData.Affiliation.PENDING; break;
+            default: customAffiliation = AffiliationData.Affiliation.UNKNOWN; break;
+        }
+
+        // Get local callsign
+        String localCallsign = mapView.getDeviceCallsign();
+
         // Update the COT item
         selectedCotItem.setType(newType);
+
+        // Store affiliation data locally
+        String uid = selectedCotItem.getUID();
+        String serverConnection = "";
+        AffiliationData affiliationData = new AffiliationData(uid, customAffiliation, localCallsign, serverConnection);
+        affiliationManager.setAffiliation(affiliationData);
 
         // Federate the change by dispatching a COT event
         try {
             // Create CotEvent manually from MapItem
             CotEvent cotEvent = new CotEvent();
-            cotEvent.setUID(selectedCotItem.getUID());
+            cotEvent.setUID(uid);
             cotEvent.setType(newType);
             cotEvent.setHow("h-e");
 
@@ -308,13 +377,29 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
                 cotEvent.setPoint(new CotPoint(gp));
             }
 
-            // Set detail
+            // Set detail with custom affiliation information
             CotDetail detail = new CotDetail();
+
+            // Add custom affiliation detail
+            CotDetail affiliationDetail = new CotDetail(CotAffiliationListener.getAffiliationDetailTag());
+            affiliationDetail.setAttribute("affiliation", customAffiliation.getValue());
+            affiliationDetail.setAttribute("markedBy", localCallsign);
+            affiliationDetail.setAttribute("timestamp", String.valueOf(System.currentTimeMillis()));
+            affiliationDetail.setAttribute("notes", "");
+            detail.addChild(affiliationDetail);
+
             cotEvent.setDetail(detail);
 
             cotDispatcher.dispatch(cotEvent);
-            Toast.makeText(pluginContext, "COT affiliation updated and federated!", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "COT affiliation updated: " + selectedCotItem.getTitle() + " -> " + newType);
+
+            // Increment dashboard counter
+            DashboardActivity.incrementCOTModified();
+            DashboardActivity.addActivity("Updated affiliation: " + selectedCotItem.getTitle() +
+                                         " -> " + customAffiliation.getValue());
+
+            Toast.makeText(pluginContext, "COT affiliation updated and federated to team!", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "COT affiliation updated: " + selectedCotItem.getTitle() + " -> " + newType +
+                  " (Custom: " + customAffiliation.getValue() + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error federating COT update", e);
             Toast.makeText(pluginContext, "Updated locally, federation may have failed", Toast.LENGTH_SHORT).show();
@@ -322,6 +407,8 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
         // Update display
         selectedCotInfo.setText("Selected: " + selectedCotItem.getTitle() + " (Type: " + newType + ")");
+        txtAffiliationInfo.setText("Team Affiliation: " + customAffiliation.getValue() +
+                                  "\nMarked by: " + localCallsign);
     }
 
     private void refreshAOIList() {
