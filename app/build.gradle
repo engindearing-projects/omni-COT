@@ -9,9 +9,9 @@
 buildscript {
 
     ext.PLUGIN_VERSION = "0.1"
-    ext.ATAK_VERSION = "5.5.0"
+    ext.ATAK_VERSION = "5.4.0"
 
-    def takdevVersion = '3.+'
+    def takdevVersion = '2.+'
 
     def getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -168,7 +168,8 @@ android {
         release {
             minifyEnabled true
             proguardFiles 'proguard-gradle.txt', 'proguard-gradle-repackage.txt'
-            signingConfig signingConfigs.release
+            // Signing will be handled by TAK third party pipeline
+            // signingConfig signingConfigs.release
             matchingFallbacks = ['odk']
         }
     }
