@@ -1,0 +1,89 @@
+name: Create TAK Pipeline Submission Zip
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  create-submission-zip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git archive
+
+      - name: Get version info
+        id: version
+        run: |
+          # Get short commit SHA
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+          # Get timestamp
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+
+          # Create zip name
+          ZIP_NAME="omni-COT-pipeline-${TIMESTAMP}-${SHORT_SHA}.zip"
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create pipeline submission zip
+        run: |
+          # Use git archive to create clean zip (respects .gitignore)
+          git archive --format=zip --output="${{ steps.version.outputs.zip_name }}" HEAD
+
+          # Verify the zip was created
+          if [ ! -f "${{ steps.version.outputs.zip_name }}" ]; then
+            echo "ERROR: Failed to create zip file!"
+            exit 1
+          fi
+
+          # Check that local.properties is NOT in the zip
+          if unzip -l "${{ steps.version.outputs.zip_name }}" 2>/dev/null | grep -q " local\.properties$"; then
+            echo "ERROR: local.properties found in zip!"
+            exit 1
+          fi
+
+          echo "✅ Successfully created: ${{ steps.version.outputs.zip_name }}"
+          ls -lh "${{ steps.version.outputs.zip_name }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tak-pipeline-submission
+          path: ${{ steps.version.outputs.zip_name }}
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Create build summary
+        run: |
+          echo "## 📦 TAK Pipeline Submission Zip Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**File:** \`${{ steps.version.outputs.zip_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Size:** $(du -h "${{ steps.version.outputs.zip_name }}" | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ steps.version.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Download" >> $GITHUB_STEP_SUMMARY
+          echo "Go to the [Actions tab](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) and download the artifact." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Submit to TAK" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the zip artifact from this workflow run" >> $GITHUB_STEP_SUMMARY
+          echo "2. Go to https://tak.gov/third-party-plugins" >> $GITHUB_STEP_SUMMARY
+          echo "3. Upload the zip file" >> $GITHUB_STEP_SUMMARY
+          echo "4. Wait ~5-10 minutes for build artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ What's Included" >> $GITHUB_STEP_SUMMARY
+          echo "- Source code (.java files)" >> $GITHUB_STEP_SUMMARY
+          echo "- Build configuration (ATAK 5.4.0)" >> $GITHUB_STEP_SUMMARY
+          echo "- Resources and assets" >> $GITHUB_STEP_SUMMARY
+          echo "- Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ❌ What's Excluded" >> $GITHUB_STEP_SUMMARY
+          echo "- \`local.properties\` (credentials)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`build/\` directories" >> $GITHUB_STEP_SUMMARY
+          echo "- \`.gradle/\` cache" >> $GITHUB_STEP_SUMMARY
+          echo "- IDE files" >> $GITHUB_STEP_SUMMARY
