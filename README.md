@@ -11,7 +11,7 @@ OmniCOT provides tactical teams with enhanced capabilities for managing Cursor o
 - **Modern Dashboard Interface**: Card-based UI displaying real-time operational metrics
 - **CoT Management**: Modify marker affiliations and battle dimensions
 - **AOI Detection**: Automatic detection and management of areas of interest
-- **Alert Foundation**: Infrastructure for geofence-based notification system
+- **Alert System**: Geofence-based alerting for CoT entry/exit events (Alpha)
 - **Activity Tracking**: Monitor recent plugin operations
 
 ## Screenshots
@@ -25,6 +25,25 @@ The plugin features a modern dashboard with:
 - Quick action cards for common operations
 - Recent activity feed
 - Advanced data management controls
+
+### Alert System
+
+![Alert System - AOI Management](screenshots/alert_system_1.png)
+
+Area of Interest (AOI) detection and management:
+- Automatic detection of drawn shapes on the map
+- List view of all detected AOIs
+- Quick access to zoom and alert configuration
+- Real-time status of configured alerts
+
+![Alert System - Configuration](screenshots/alert_system_2.png)
+
+Alert configuration interface:
+- Enable/disable alerts for specific AOIs
+- Configure trigger types (Entry, Exit, or Both)
+- Monitor specific COT types or all markers
+- Set alert duration in hours
+- Simple save/cancel workflow
 
 ## Requirements
 
