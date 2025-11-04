@@ -35,7 +35,7 @@ fi
 # Create timestamp
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 ZIP_NAME="omni-COT-pipeline-$TIMESTAMP.zip"
-DEST_PATH="$HOME/Desktop/$ZIP_NAME"
+DEST_PATH="$SCRIPT_DIR/$ZIP_NAME"
 
 echo "Creating pipeline submission zip..."
 echo "  Source: $SCRIPT_DIR"
@@ -43,7 +43,8 @@ echo "  Output: $DEST_PATH"
 echo ""
 
 # Use git archive to create clean zip (respects .gitignore)
-git archive --format=zip --output="$DEST_PATH" HEAD
+# Create zip with omni-COT root folder as required by TAK pipeline
+git archive --format=zip --prefix=omni-COT/ --output="$DEST_PATH" HEAD
 
 # Verify the zip was created
 if [ ! -f "$DEST_PATH" ]; then
@@ -79,7 +80,7 @@ echo "✅ SUCCESS!"
 echo "=================================================="
 echo ""
 echo "Created: $ZIP_NAME"
-echo "Location: ~/Desktop/$ZIP_NAME"
+echo "Location: $DEST_PATH"
 echo "Size: $SIZE"
 echo ""
 echo "What's included:"
@@ -96,11 +97,11 @@ echo "  ❌ Signed APK/AAB files"
 echo ""
 echo "Next steps:"
 echo "  1. Go to https://tak.gov/third-party-plugins"
-echo "  2. Upload: ~/Desktop/$ZIP_NAME"
+echo "  2. Upload: $ZIP_NAME"
 echo "  3. Wait for build artifacts (~5-10 minutes)"
 echo ""
 echo "Build will use:"
 echo "  - ATAK Version: 5.4.0 (Play Store compatible)"
-echo "  - takdevVersion: 3.+ (Pipeline compatible)"
+echo "  - takdevVersion: 2.+ (Pipeline compatible - required for ATAK 4.2+)"
 echo "  - TAK's official signing keystore"
 echo ""
