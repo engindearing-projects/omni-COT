@@ -43,7 +43,8 @@ echo "  Output: $DEST_PATH"
 echo ""
 
 # Use git archive to create clean zip (respects .gitignore)
-git archive --format=zip --output="$DEST_PATH" HEAD
+# Create zip with omni-COT root folder as required by TAK pipeline
+git archive --format=zip --prefix=omni-COT/ --output="$DEST_PATH" HEAD
 
 # Verify the zip was created
 if [ ! -f "$DEST_PATH" ]; then
@@ -101,6 +102,6 @@ echo "  3. Wait for build artifacts (~5-10 minutes)"
 echo ""
 echo "Build will use:"
 echo "  - ATAK Version: 5.4.0 (Play Store compatible)"
-echo "  - takdevVersion: 3.+ (Pipeline compatible)"
+echo "  - takdevVersion: 2.+ (Pipeline compatible - required for ATAK 4.2+)"
 echo "  - TAK's official signing keystore"
 echo ""
