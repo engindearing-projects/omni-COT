@@ -168,8 +168,7 @@ android {
         release {
             minifyEnabled true
             proguardFiles 'proguard-gradle.txt', 'proguard-gradle-repackage.txt'
-            // Signing will be handled by TAK third party pipeline
-            // signingConfig signingConfigs.release
+            signingConfig signingConfigs.release
             matchingFallbacks = ['odk']
         }
     }
