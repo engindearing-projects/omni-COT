@@ -67,7 +67,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     private MapItem selectedCotItem;
     private CotDispatcher cotDispatcher;
     private AffiliationManager affiliationManager;
-    private boolean isSelectingCot = false;
+    private EventHandlerManager eventHandlerManager;
     private boolean showingDashboard = true;
 
     public OmniCOTDropDownReceiver(final MapView mapView, final Context context, View templateView) {
@@ -88,6 +88,61 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
         // Initialize dashboard
         dashboardActivity = new DashboardActivity(pluginContext, mapView, templateView, this);
+
+        // Initialize event handler manager with best practices
+        eventHandlerManager = new EventHandlerManager(pluginContext, mapView, affiliationManager);
+
+        // Register persistent listeners for real-time COT and AOI monitoring
+        eventHandlerManager.registerPersistentListeners(
+            new EventHandlerManager.CotChangeCallback() {
+                @Override
+                public void onCotAdded(MapItem item) {
+                    Log.d(TAG, "Real-time: New COT detected - " + item.getTitle());
+                    // Refresh dashboard stats
+                    if (dashboardActivity != null) {
+                        dashboardActivity.updateStats();
+                    }
+                }
+
+                @Override
+                public void onCotRemoved(MapItem item) {
+                    Log.d(TAG, "Real-time: COT removed - " + item.getTitle());
+                    // Refresh dashboard stats
+                    if (dashboardActivity != null) {
+                        dashboardActivity.updateStats();
+                    }
+                }
+
+                @Override
+                public void onCotMoved(MapItem item, com.atakmap.coremap.maps.coords.GeoPoint newLocation) {
+                    Log.d(TAG, "Real-time: COT moved - " + item.getTitle() + " to " + newLocation);
+                }
+            },
+            new EventHandlerManager.AOIChangeCallback() {
+                @Override
+                public void onAOIAdded(Shape shape) {
+                    Log.d(TAG, "Real-time: New AOI detected - " + shape.getTitle());
+                    // Auto-refresh AOI list if viewing AOI management
+                    if (!showingDashboard && aoiRecyclerView != null) {
+                        refreshAOIList();
+                    }
+                }
+
+                @Override
+                public void onAOIRemoved(Shape shape) {
+                    Log.d(TAG, "Real-time: AOI removed - " + shape.getTitle());
+                    // Auto-refresh AOI list if viewing AOI management
+                    if (!showingDashboard && aoiRecyclerView != null) {
+                        refreshAOIList();
+                    }
+                }
+
+                @Override
+                public void onAOIGroupChanged() {
+                    Log.d(TAG, "Real-time: AOI group changed");
+                }
+            }
+        );
 
         initializeUI();
     }
@@ -216,30 +271,27 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     }
 
     private void startCotSelection() {
-        isSelectingCot = true;
         btnSelectCot.setText("Tap a COT marker on map...");
         btnSelectCot.setEnabled(false);
 
-        Toast.makeText(pluginContext, "Tap any COT marker on the map", Toast.LENGTH_SHORT).show();
-
-        // Add map click listener
-        final MapEventDispatcher.MapEventDispatchListener clickListener = new MapEventDispatcher.MapEventDispatchListener() {
+        // Use EventHandlerManager with proper listener stack management (push/pop)
+        // This follows ATAK best practices for temporary event handling
+        eventHandlerManager.startCotSelection(new EventHandlerManager.CotSelectionCallback() {
             @Override
-            public void onMapEvent(MapEvent event) {
-                if (isSelectingCot) {
-                    MapItem item = event.getItem();
-                    if (item != null) {
-                        onCotSelected(item);
-                        mapView.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_CLICK, this);
-                    }
-                }
+            public void onCotSelected(MapItem item) {
+                onCotSelected(item);
             }
-        };
-        mapView.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_CLICK, clickListener);
+
+            @Override
+            public void onCotSelectionCancelled() {
+                btnSelectCot.setText("Select COT to Modify");
+                btnSelectCot.setEnabled(true);
+                Toast.makeText(pluginContext, "COT selection cancelled", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void onCotSelected(MapItem item) {
-        isSelectingCot = false;
         selectedCotItem = item;
 
         btnSelectCot.setText("Select COT to Modify");
@@ -487,9 +539,27 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
     @Override
     public void onDropDownClose() {
+        // Cancel any active COT selection to restore listener stack
+        if (eventHandlerManager != null) {
+            eventHandlerManager.cancelCotSelection();
+        }
     }
 
     @Override
     protected void disposeImpl() {
+        Log.d(TAG, "Disposing OmniCOTDropDownReceiver");
+
+        // Dispose event handler manager - cleans up all listeners
+        if (eventHandlerManager != null) {
+            eventHandlerManager.dispose();
+            eventHandlerManager = null;
+        }
+
+        // Clear references
+        selectedCotItem = null;
+        cotDispatcher = null;
+        dashboardActivity = null;
+
+        Log.d(TAG, "OmniCOTDropDownReceiver disposed successfully");
     }
 }
