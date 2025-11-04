@@ -60,7 +60,7 @@
                 android:text="Affiliation:"
                 android:paddingTop="4dp" />
 
-            <Spinner
+            <com.atakmap.android.gui.PluginSpinner
                 android:id="@+id/spinnerAffiliation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -71,7 +71,7 @@
                 android:text="Dimension:"
                 android:paddingTop="8dp" />
 
-            <Spinner
+            <com.atakmap.android.gui.PluginSpinner
                 android:id="@+id/spinnerDimension"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -83,7 +83,7 @@
                 android:paddingTop="12dp"
                 android:textStyle="bold" />
 
-            <Spinner
+            <com.atakmap.android.gui.PluginSpinner
                 android:id="@+id/spinnerCustomAffiliation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />

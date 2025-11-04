@@ -6,7 +6,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
+import com.atakmap.android.gui.PluginSpinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,9 +51,9 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     private Button btnSelectCot;
     private LinearLayout cotAffiliationSection;
     private TextView selectedCotInfo;
-    private Spinner spinnerAffiliation;
-    private Spinner spinnerDimension;
-    private Spinner spinnerCustomAffiliation;
+    private PluginSpinner spinnerAffiliation;
+    private PluginSpinner spinnerDimension;
+    private PluginSpinner spinnerCustomAffiliation;
     private TextView txtAffiliationInfo;
     private Button btnUpdateAffiliation;
 

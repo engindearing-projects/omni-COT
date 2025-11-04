@@ -40,7 +40,7 @@
             android:text="Trigger Type:"
             android:paddingTop="4dp" />
 
-        <Spinner
+        <com.atakmap.android.gui.PluginSpinner
             android:id="@+id/spinnerTriggerType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
             android:text="Monitor:"
             android:paddingTop="4dp" />
 
-        <Spinner
+        <com.atakmap.android.gui.PluginSpinner
             android:id="@+id/spinnerMonitoredTypes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

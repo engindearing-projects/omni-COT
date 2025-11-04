@@ -1,5 +1,6 @@
 package com.engindearing.omnicot;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,7 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.Spinner;
+import com.atakmap.android.gui.PluginSpinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,13 +41,27 @@ public class AlertConfigDialog {
     }
 
     public void show() {
+        // Use plugin context for inflating layout (to access plugin resources)
+        // But get activity context for the dialog itself
         View dialogView = LayoutInflater.from(context).inflate(R.layout.aoi_alert_config, null);
+
+        // Get Activity context from MapView for the dialog
+        Context mvContext = mapView.getContext();
+        final Context dialogContext;
+
+        if (mvContext instanceof Activity) {
+            dialogContext = mvContext;
+        } else {
+            // Fallback to mapView context
+            dialogContext = mvContext;
+            Log.w(TAG, "MapView context is not an Activity, dialog may fail to show");
+        }
 
         // Initialize UI components
         TextView alertAoiName = dialogView.findViewById(R.id.alertAoiName);
         CheckBox checkEnableAlert = dialogView.findViewById(R.id.checkEnableAlert);
-        Spinner spinnerTriggerType = dialogView.findViewById(R.id.spinnerTriggerType);
-        Spinner spinnerMonitoredTypes = dialogView.findViewById(R.id.spinnerMonitoredTypes);
+        PluginSpinner spinnerTriggerType = dialogView.findViewById(R.id.spinnerTriggerType);
+        PluginSpinner spinnerMonitoredTypes = dialogView.findViewById(R.id.spinnerMonitoredTypes);
         EditText editAlertDuration = dialogView.findViewById(R.id.editAlertDuration);
         Button btnSaveAlert = dialogView.findViewById(R.id.btnSaveAlert);
         Button btnCancelAlert = dialogView.findViewById(R.id.btnCancelAlert);
@@ -71,8 +86,8 @@ public class AlertConfigDialog {
         setTriggerTypeSelection(spinnerTriggerType, aoiItem.getTriggerType());
         setMonitoredTypeSelection(spinnerMonitoredTypes, aoiItem.getMonitoredType());
 
-        // Create dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        // Create dialog with activity context
+        AlertDialog.Builder builder = new AlertDialog.Builder(dialogContext);
         builder.setView(dialogView);
         dialog = builder.create();
 
@@ -99,7 +114,7 @@ public class AlertConfigDialog {
         dialog.show();
     }
 
-    private void setTriggerTypeSelection(Spinner spinner, String triggerType) {
+    private void setTriggerTypeSelection(PluginSpinner spinner, String triggerType) {
         int position = 0;
         if ("Entry".equals(triggerType)) position = 0;
         else if ("Exit".equals(triggerType)) position = 1;
@@ -107,7 +122,7 @@ public class AlertConfigDialog {
         spinner.setSelection(position);
     }
 
-    private void setMonitoredTypeSelection(Spinner spinner, String monitoredType) {
+    private void setMonitoredTypeSelection(PluginSpinner spinner, String monitoredType) {
         int position = 0;
         if ("All".equals(monitoredType)) position = 0;
         else if ("Friendly".equals(monitoredType)) position = 1;
@@ -186,7 +201,7 @@ public class AlertConfigDialog {
                 // Setup breach listener
                 setupBreachListener();
 
-                Toast.makeText(context, "Alert enabled for " + aoiItem.getName(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(mapView.getContext(), "Alert enabled for " + aoiItem.getName(), Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "GeoFence created: " + aoiItem.getName() + " (" + triggerName + ", " + monitoredName + ")");
             } else {
                 // Disable geofence
@@ -206,17 +221,17 @@ public class AlertConfigDialog {
                     breachReceiver = null;
                 }
 
-                Toast.makeText(context, "Alert disabled for " + aoiItem.getName(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(mapView.getContext(), "Alert disabled for " + aoiItem.getName(), Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "GeoFence disabled: " + aoiItem.getName());
             }
 
             dialog.dismiss();
 
         } catch (NumberFormatException e) {
-            Toast.makeText(context, "Invalid duration", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mapView.getContext(), "Invalid duration", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Error parsing duration", e);
         } catch (Exception e) {
-            Toast.makeText(context, "Error configuring alert", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mapView.getContext(), "Error configuring alert", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Error configuring geofence", e);
         }
     }
@@ -239,7 +254,7 @@ public class AlertConfigDialog {
                             " - Item: " + itemUID + " - Type: " + breachType);
 
                     // Show notification
-                    Toast.makeText(context,
+                    Toast.makeText(mapView.getContext(),
                             "ALERT: COT " + breachType + " AOI " + aoiItem.getName(),
                             Toast.LENGTH_LONG).show();
                 }
