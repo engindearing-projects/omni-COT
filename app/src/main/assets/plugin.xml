@@ -4,7 +4,7 @@
 
     <extension
         type="gov.tak.api.plugin.IPlugin"
-        impl="com.engindearing.omnicot.PluginTemplate"
+        impl="com.engindearing.omnicot.OmniCOTPlugin"
         singleton="true" />
 
 </plugin>

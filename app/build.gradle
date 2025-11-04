@@ -147,16 +147,16 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file(keystoreFile)
-            storePassword keystorePassword
-            keyAlias keyAlias
-            keyPassword keyPassword
+            storeFile file("${buildDir}/android_keystore")
+            storePassword "tnttnt"
+            keyAlias "wintec_mapping"
+            keyPassword "tnttnt"
         }
         release {
-            storeFile file(keystoreFile)
-            storePassword keystorePassword
-            keyAlias keyAlias
-            keyPassword keyPassword
+            storeFile file("${buildDir}/android_keystore")
+            storePassword "tnttnt"
+            keyAlias "wintec_mapping"
+            keyPassword "tnttnt"
         }
     }
 

@@ -25,11 +25,18 @@ public class AffiliationManager {
     private final Context context;
 
     private AffiliationManager(Context context) {
-        this.context = context.getApplicationContext();
+        if (context == null) {
+            throw new IllegalArgumentException("Context cannot be null");
+        }
+        this.context = context.getApplicationContext() != null ? context.getApplicationContext() : context;
         this.prefs = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     public static synchronized AffiliationManager getInstance(Context context) {
+        if (context == null) {
+            Log.e(TAG, "Cannot create AffiliationManager with null context");
+            return null;
+        }
         if (instance == null) {
             instance = new AffiliationManager(context);
         }

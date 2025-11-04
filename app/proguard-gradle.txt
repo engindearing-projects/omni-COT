@@ -90,7 +90,13 @@
 ######################################################################
 
 ######################################################################
-## below you can add any rules specific to your plugin limited to 
+## below you can add any rules specific to your plugin limited to
 ## dontwarn and keep directives
 ######################################################################
+
+# Keep plugin entry point class - required for ATAK to load the plugin
+-keep class com.engindearing.omnicot.OmniCOTPlugin { *; }
+-keep class com.engindearing.omnicot.OmniCOTMapComponent { *; }
+-keep class com.engindearing.omnicot.OmniCOTTool { *; }
+-keep class com.engindearing.omnicot.OmniCOTDropDownReceiver { *; }
 

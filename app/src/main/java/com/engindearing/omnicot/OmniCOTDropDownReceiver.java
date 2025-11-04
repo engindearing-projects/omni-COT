@@ -80,7 +80,11 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         cotDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
 
         // Initialize affiliation manager
+        Log.d(TAG, "Initializing AffiliationManager with context: " + (pluginContext != null ? "valid" : "NULL"));
         affiliationManager = AffiliationManager.getInstance(pluginContext);
+        if (affiliationManager == null) {
+            Log.e(TAG, "Failed to initialize AffiliationManager");
+        }
 
         // Initialize dashboard
         dashboardActivity = new DashboardActivity(pluginContext, mapView, templateView, this);
@@ -119,7 +123,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         setupSpinners();
 
         // Setup RecyclerView
-        aoiAdapter = new AOIAdapter(pluginContext);
+        aoiAdapter = new AOIAdapter(pluginContext, mapView, new ArrayList<>());
         aoiRecyclerView.setLayoutManager(new LinearLayoutManager(pluginContext));
         aoiRecyclerView.setAdapter(aoiAdapter);
 

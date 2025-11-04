@@ -16,7 +16,7 @@ Thank you for your interest in contributing to OmniCOT! This document provides g
 ### Prerequisites
 
 1. **ATAK-CIV SDK**
-   - Download ATAK-CIV SDK 5.5.0 or later from [TAK.gov](https://tak.gov)
+   - Download ATAK-CIV SDK 5.4.0 or later from [TAK.gov](https://tak.gov)
    - Extract the SDK to a known location
 
 2. **Development Tools**
@@ -59,7 +59,7 @@ For development and testing:
 ./gradlew assembleCivDebug
 ```
 
-Output: `app/build/outputs/apk/civ/debug/ATAK-Plugin-omnicot-0.1--5.5.0-civ-debug.apk`
+Output: `app/build/outputs/apk/civ/debug/ATAK-Plugin-omnicot-0.1--5.4.0-civ-debug.apk`
 
 ### Release Build
 
@@ -69,7 +69,7 @@ For production:
 ./gradlew assembleCivRelease
 ```
 
-Output: `app/build/outputs/apk/civ/release/ATAK-Plugin-omnicot-0.1--5.5.0-civ-release.apk`
+Output: `app/build/outputs/apk/civ/release/ATAK-Plugin-omnicot-0.1--5.4.0-civ-release.apk`
 
 ### Installing to Device
 
@@ -226,7 +226,7 @@ Include:
 
 ```markdown
 **Environment**
-- ATAK-CIV 5.5.0
+- ATAK-CIV 5.4.0
 - Android 12
 - Samsung Galaxy S21
 
