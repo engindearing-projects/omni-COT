@@ -91,3 +91,6 @@ libs/
 # Logs
 *.log
 nul
+
+# Pipeline submission zips (don't include zips in zips!)
+*-pipeline-*.zip
