@@ -15,6 +15,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.coremap.log.Log;
+import com.engindearing.omnicot.remoteid.BluetoothDeviceDialog;
 import com.engindearing.omnicot.remoteid.BluetoothManager;
 import com.engindearing.omnicot.remoteid.RemoteIdParser;
 
@@ -356,15 +357,16 @@ public class DashboardActivity {
             return;
         }
 
-        List<android.bluetooth.BluetoothDevice> devices = bluetoothManager.findGybDevices();
-        if (devices.isEmpty()) {
-            Toast.makeText(context, "No paired gyb_detect devices found.\n" +
-                    "Please pair with the device in Android Bluetooth settings first.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        // Connect to first device
-        bluetoothManager.connect(devices.get(0));
+        // Show device selection dialog with discovery and pairing
+        BluetoothDeviceDialog dialog = new BluetoothDeviceDialog(
+                context,
+                bluetoothManager,
+                device -> {
+                    // Connect to selected device
+                    bluetoothManager.connect(device);
+                }
+        );
+        dialog.show();
     }
 
     private void onBluetoothDisconnectClick() {

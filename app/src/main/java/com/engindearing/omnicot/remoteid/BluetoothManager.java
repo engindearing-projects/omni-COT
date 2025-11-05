@@ -4,7 +4,10 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
@@ -43,6 +46,11 @@ public class BluetoothManager {
 
     private List<DataListener> dataListeners = new ArrayList<>();
     private List<ConnectionListener> connectionListeners = new ArrayList<>();
+    private List<DiscoveryListener> discoveryListeners = new ArrayList<>();
+
+    private BroadcastReceiver discoveryReceiver;
+    private boolean isDiscovering = false;
+    private List<BluetoothDevice> discoveredDevices = new ArrayList<>();
 
     /**
      * Listener for received data
@@ -61,6 +69,18 @@ public class BluetoothManager {
         void onConnected(String deviceName);
         void onDisconnected();
         void onError(String error);
+    }
+
+    /**
+     * Listener for device discovery
+     */
+    public interface DiscoveryListener {
+        void onDiscoveryStarted();
+        void onDeviceFound(BluetoothDevice device);
+        void onDiscoveryFinished();
+        void onPairingRequested(BluetoothDevice device);
+        void onPairingSuccess(BluetoothDevice device);
+        void onPairingFailed(BluetoothDevice device);
     }
 
     public BluetoothManager(Context context) {
@@ -99,6 +119,22 @@ public class BluetoothManager {
      */
     public void removeConnectionListener(ConnectionListener listener) {
         connectionListeners.remove(listener);
+    }
+
+    /**
+     * Register a discovery listener
+     */
+    public void addDiscoveryListener(DiscoveryListener listener) {
+        if (!discoveryListeners.contains(listener)) {
+            discoveryListeners.add(listener);
+        }
+    }
+
+    /**
+     * Unregister a discovery listener
+     */
+    public void removeDiscoveryListener(DiscoveryListener listener) {
+        discoveryListeners.remove(listener);
     }
 
     /**
@@ -141,6 +177,191 @@ public class BluetoothManager {
         }
 
         return gybDevices;
+    }
+
+    /**
+     * Start discovering nearby Bluetooth devices
+     */
+    public void startDiscovery() {
+        if (!isBluetoothAvailable()) {
+            notifyDiscoveryError("Bluetooth not available");
+            return;
+        }
+
+        // Check permissions
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED) {
+            notifyDiscoveryError("BLUETOOTH_SCAN permission not granted");
+            return;
+        }
+
+        if (isDiscovering) {
+            Log.w(TAG, "Discovery already in progress");
+            return;
+        }
+
+        // Clear previous results
+        discoveredDevices.clear();
+
+        // Set up discovery receiver
+        if (discoveryReceiver == null) {
+            discoveryReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+
+                    if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        if (device != null) {
+                            handleDeviceFound(device);
+                        }
+                    } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                        handleDiscoveryFinished();
+                    } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE);
+                        handleBondStateChanged(device, bondState);
+                    }
+                }
+            };
+
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(BluetoothDevice.ACTION_FOUND);
+            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+            filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+            context.registerReceiver(discoveryReceiver, filter);
+        }
+
+        // Start discovery
+        if (bluetoothAdapter.startDiscovery()) {
+            isDiscovering = true;
+            notifyDiscoveryStarted();
+            Log.d(TAG, "Started Bluetooth discovery");
+        } else {
+            notifyDiscoveryError("Failed to start discovery");
+        }
+    }
+
+    /**
+     * Stop discovering Bluetooth devices
+     */
+    public void stopDiscovery() {
+        if (!isDiscovering) {
+            return;
+        }
+
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)
+                == PackageManager.PERMISSION_GRANTED) {
+            bluetoothAdapter.cancelDiscovery();
+        }
+
+        isDiscovering = false;
+        Log.d(TAG, "Stopped Bluetooth discovery");
+    }
+
+    /**
+     * Get list of discovered devices
+     */
+    public List<BluetoothDevice> getDiscoveredDevices() {
+        return new ArrayList<>(discoveredDevices);
+    }
+
+    /**
+     * Initiate pairing with a device
+     */
+    public boolean pairDevice(BluetoothDevice device) {
+        if (device == null) {
+            return false;
+        }
+
+        // Check if already paired
+        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+            Log.d(TAG, "Device already paired: " + getDeviceName(device));
+            return true;
+        }
+
+        // Check permissions
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+            notifyDiscoveryError("BLUETOOTH_CONNECT permission not granted");
+            return false;
+        }
+
+        // Initiate pairing
+        try {
+            boolean result = device.createBond();
+            if (result) {
+                notifyPairingRequested(device);
+                Log.d(TAG, "Pairing requested for: " + getDeviceName(device));
+            }
+            return result;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initiate pairing", e);
+            return false;
+        }
+    }
+
+    /**
+     * Handle device found during discovery
+     */
+    private void handleDeviceFound(BluetoothDevice device) {
+        if (device == null) return;
+
+        // Avoid duplicates
+        for (BluetoothDevice existing : discoveredDevices) {
+            if (existing.getAddress().equals(device.getAddress())) {
+                return;
+            }
+        }
+
+        discoveredDevices.add(device);
+        notifyDeviceFound(device);
+
+        String name = getDeviceName(device);
+        Log.d(TAG, "Found device: " + name + " (" + device.getAddress() + ")");
+    }
+
+    /**
+     * Handle discovery finished
+     */
+    private void handleDiscoveryFinished() {
+        isDiscovering = false;
+        notifyDiscoveryFinished();
+        Log.d(TAG, "Discovery finished. Found " + discoveredDevices.size() + " devices");
+    }
+
+    /**
+     * Handle bond state changes (pairing)
+     */
+    private void handleBondStateChanged(BluetoothDevice device, int bondState) {
+        if (device == null) return;
+
+        String name = getDeviceName(device);
+        switch (bondState) {
+            case BluetoothDevice.BOND_BONDED:
+                Log.d(TAG, "Device paired: " + name);
+                notifyPairingSuccess(device);
+                break;
+            case BluetoothDevice.BOND_NONE:
+                Log.d(TAG, "Device unpaired: " + name);
+                notifyPairingFailed(device);
+                break;
+            case BluetoothDevice.BOND_BONDING:
+                Log.d(TAG, "Device pairing in progress: " + name);
+                break;
+        }
+    }
+
+    /**
+     * Get device name safely
+     */
+    private String getDeviceName(BluetoothDevice device) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
+                == PackageManager.PERMISSION_GRANTED) {
+            String name = device.getName();
+            return name != null ? name : device.getAddress();
+        }
+        return device.getAddress();
     }
 
     /**
@@ -383,12 +604,81 @@ public class BluetoothManager {
         });
     }
 
+    private void notifyDiscoveryStarted() {
+        mainHandler.post(() -> {
+            for (DiscoveryListener listener : discoveryListeners) {
+                listener.onDiscoveryStarted();
+            }
+        });
+    }
+
+    private void notifyDeviceFound(BluetoothDevice device) {
+        mainHandler.post(() -> {
+            for (DiscoveryListener listener : discoveryListeners) {
+                listener.onDeviceFound(device);
+            }
+        });
+    }
+
+    private void notifyDiscoveryFinished() {
+        mainHandler.post(() -> {
+            for (DiscoveryListener listener : discoveryListeners) {
+                listener.onDiscoveryFinished();
+            }
+        });
+    }
+
+    private void notifyPairingRequested(BluetoothDevice device) {
+        mainHandler.post(() -> {
+            for (DiscoveryListener listener : discoveryListeners) {
+                listener.onPairingRequested(device);
+            }
+        });
+    }
+
+    private void notifyPairingSuccess(BluetoothDevice device) {
+        mainHandler.post(() -> {
+            for (DiscoveryListener listener : discoveryListeners) {
+                listener.onPairingSuccess(device);
+            }
+        });
+    }
+
+    private void notifyPairingFailed(BluetoothDevice device) {
+        mainHandler.post(() -> {
+            for (DiscoveryListener listener : discoveryListeners) {
+                listener.onPairingFailed(device);
+            }
+        });
+    }
+
+    private void notifyDiscoveryError(String error) {
+        mainHandler.post(() -> {
+            for (ConnectionListener listener : connectionListeners) {
+                listener.onError(error);
+            }
+        });
+    }
+
     /**
      * Release all resources
      */
     public void shutdown() {
+        stopDiscovery();
         disconnect();
+
+        // Unregister discovery receiver
+        if (discoveryReceiver != null) {
+            try {
+                context.unregisterReceiver(discoveryReceiver);
+            } catch (Exception e) {
+                Log.e(TAG, "Error unregistering discovery receiver", e);
+            }
+            discoveryReceiver = null;
+        }
+
         dataListeners.clear();
         connectionListeners.clear();
+        discoveryListeners.clear();
     }
 }
