@@ -359,7 +359,7 @@ public class DashboardActivity {
 
         // Show device selection dialog with discovery and pairing
         BluetoothDeviceDialog dialog = new BluetoothDeviceDialog(
-                context,
+                mapView.getContext(),
                 bluetoothManager,
                 device -> {
                     // Connect to selected device
