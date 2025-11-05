@@ -31,6 +31,8 @@ import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.engindearing.omnicot.remoteid.RemoteIdData;
+import com.engindearing.omnicot.remoteid.RemoteIdToCotConverter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -489,7 +491,38 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     public void onDropDownClose() {
     }
 
+    /**
+     * Handle Remote ID drone detection from gyb_detect device
+     */
+    public void handleRemoteIdDetection(RemoteIdData data) {
+        try {
+            // Convert Remote ID data to CoT event
+            CotEvent cotEvent = RemoteIdToCotConverter.convertToCotEvent(data);
+
+            if (cotEvent != null) {
+                // Dispatch the CoT event to ATAK
+                cotDispatcher.dispatch(cotEvent);
+
+                Log.d(TAG, "Dispatched drone CoT event: " + cotEvent.getUID() +
+                        " at " + data.getUasLat() + ", " + data.getUasLon());
+
+                // Update dashboard
+                DashboardActivity.incrementDronesDetected();
+                DashboardActivity.addActivity("Drone " + data.getUniqueId() +
+                        " displayed on map");
+            } else {
+                Log.w(TAG, "Failed to convert Remote ID data to CoT event");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling Remote ID detection", e);
+        }
+    }
+
     @Override
     protected void disposeImpl() {
+        // Clean up dashboard
+        if (dashboardActivity != null) {
+            dashboardActivity.dispose();
+        }
     }
 }

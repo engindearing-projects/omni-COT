@@ -2,6 +2,7 @@ package com.engindearing.omnicot;
 
 import android.content.Context;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -14,6 +15,8 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.coremap.log.Log;
+import com.engindearing.omnicot.remoteid.BluetoothManager;
+import com.engindearing.omnicot.remoteid.RemoteIdParser;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +43,21 @@ public class DashboardActivity {
     private ImageButton btnSettings;
     private ImageButton btnHelp;
 
+    // Bluetooth UI Components
+    private TextView txtBluetoothStatus;
+    private TextView txtBluetoothDevice;
+    private TextView txtDronesDetected;
+    private TextView txtBatteryLevel;
+    private Button btnBluetoothConnect;
+    private Button btnBluetoothDisconnect;
+    private ImageButton btnBluetoothRefresh;
+
+    // Bluetooth Manager
+    private BluetoothManager bluetoothManager;
+
     // Activity tracking
     private static int cotModifiedCount = 0;
+    private static int dronesDetectedCount = 0;
     private static List<String> recentActivities = new ArrayList<>();
 
     public DashboardActivity(Context context, MapView mapView, View dashboardView, OmniCOTDropDownReceiver receiver) {
@@ -74,7 +90,17 @@ public class DashboardActivity {
         btnSettings = dashboardView.findViewById(R.id.btnSettings);
         btnHelp = dashboardView.findViewById(R.id.btnHelp);
 
+        // Bluetooth UI components
+        txtBluetoothStatus = dashboardView.findViewById(R.id.txtBluetoothStatus);
+        txtBluetoothDevice = dashboardView.findViewById(R.id.txtBluetoothDevice);
+        txtDronesDetected = dashboardView.findViewById(R.id.txtDronesDetected);
+        txtBatteryLevel = dashboardView.findViewById(R.id.txtBatteryLevel);
+        btnBluetoothConnect = dashboardView.findViewById(R.id.btnBluetoothConnect);
+        btnBluetoothDisconnect = dashboardView.findViewById(R.id.btnBluetoothDisconnect);
+        btnBluetoothRefresh = dashboardView.findViewById(R.id.btnBluetoothRefresh);
+
         setupListeners();
+        initializeBluetooth();
     }
 
     private void setupListeners() {
@@ -120,6 +146,28 @@ public class DashboardActivity {
                 showHelp();
             }
         });
+
+        // Bluetooth listeners
+        btnBluetoothConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBluetoothConnectClick();
+            }
+        });
+
+        btnBluetoothDisconnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBluetoothDisconnectClick();
+            }
+        });
+
+        btnBluetoothRefresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBluetoothRefreshClick();
+            }
+        });
     }
 
     public void updateStats() {
@@ -134,7 +182,11 @@ public class DashboardActivity {
         // COT modified count
         txtCOTModified.setText(String.valueOf(cotModifiedCount));
 
-        Log.d(TAG, "Dashboard stats updated - AOIs: " + aoiCount + ", Alerts: " + alertCount + ", COT: " + cotModifiedCount);
+        // Drones detected count
+        txtDronesDetected.setText(String.valueOf(dronesDetectedCount));
+
+        Log.d(TAG, "Dashboard stats updated - AOIs: " + aoiCount + ", Alerts: " + alertCount +
+                ", COT: " + cotModifiedCount + ", Drones: " + dronesDetectedCount);
     }
 
     private int getAOICount() {
@@ -220,9 +272,143 @@ public class DashboardActivity {
                 "• COT Management - Modify marker affiliations\n" +
                 "• AOI Management - Manage areas of interest\n" +
                 "• Create Alert - Set up geofence alerts\n" +
-                "• View History - See recent activities\n\n" +
-                "Stats show active AOIs, alerts, and modified COT markers.";
+                "• View History - See recent activities\n" +
+                "• Remote ID Detection - Connect to gyb_detect device\n\n" +
+                "Stats show active AOIs, alerts, modified COT markers, and detected drones.";
 
         Toast.makeText(context, helpText, Toast.LENGTH_LONG).show();
+    }
+
+    // ========== Bluetooth Methods ==========
+
+    private void initializeBluetooth() {
+        bluetoothManager = new BluetoothManager(context);
+
+        // Set up data listeners
+        bluetoothManager.addDataListener(new BluetoothManager.DataListener() {
+            @Override
+            public void onDeviceInfo(RemoteIdParser.DeviceInfo info) {
+                txtBluetoothDevice.setText(info.toString());
+                addActivity("gyb_detect connected: " + info.model);
+            }
+
+            @Override
+            public void onBatteryStatus(RemoteIdParser.BatteryStatus status) {
+                txtBatteryLevel.setText(status.getPercentage() + "%");
+            }
+
+            @Override
+            public void onRemoteIdData(com.engindearing.omnicot.remoteid.RemoteIdData data) {
+                handleDroneDetection(data);
+            }
+        });
+
+        // Set up connection listeners
+        bluetoothManager.addConnectionListener(new BluetoothManager.ConnectionListener() {
+            @Override
+            public void onConnecting(String deviceName) {
+                txtBluetoothStatus.setText("Bluetooth: Connecting...");
+                btnBluetoothConnect.setEnabled(false);
+                addActivity("Connecting to " + deviceName);
+            }
+
+            @Override
+            public void onConnected(String deviceName) {
+                txtBluetoothStatus.setText("Bluetooth: Connected");
+                txtBluetoothDevice.setText(deviceName);
+                btnBluetoothConnect.setEnabled(false);
+                btnBluetoothDisconnect.setEnabled(true);
+                addActivity("Connected to " + deviceName);
+                Toast.makeText(context, "Connected to " + deviceName, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onDisconnected() {
+                txtBluetoothStatus.setText("Bluetooth: Not Connected");
+                txtBluetoothDevice.setText("gyb_detect device");
+                txtBatteryLevel.setText("--");
+                btnBluetoothConnect.setEnabled(true);
+                btnBluetoothDisconnect.setEnabled(false);
+                addActivity("Bluetooth disconnected");
+            }
+
+            @Override
+            public void onError(String error) {
+                txtBluetoothStatus.setText("Bluetooth: Error");
+                btnBluetoothConnect.setEnabled(true);
+                btnBluetoothDisconnect.setEnabled(false);
+                Toast.makeText(context, "Bluetooth error: " + error, Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Bluetooth error: " + error);
+            }
+        });
+
+        // Check initial state
+        if (!bluetoothManager.isBluetoothAvailable()) {
+            txtBluetoothStatus.setText("Bluetooth: Unavailable");
+            btnBluetoothConnect.setEnabled(false);
+            Toast.makeText(context, "Bluetooth is not available or not enabled", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void onBluetoothConnectClick() {
+        if (!bluetoothManager.isBluetoothAvailable()) {
+            Toast.makeText(context, "Please enable Bluetooth first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<android.bluetooth.BluetoothDevice> devices = bluetoothManager.findGybDevices();
+        if (devices.isEmpty()) {
+            Toast.makeText(context, "No paired gyb_detect devices found.\n" +
+                    "Please pair with the device in Android Bluetooth settings first.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Connect to first device
+        bluetoothManager.connect(devices.get(0));
+    }
+
+    private void onBluetoothDisconnectClick() {
+        bluetoothManager.disconnect();
+    }
+
+    private void onBluetoothRefreshClick() {
+        if (bluetoothManager.isConnected()) {
+            Toast.makeText(context, "Already connected", Toast.LENGTH_SHORT).show();
+        } else {
+            onBluetoothConnectClick();
+        }
+    }
+
+    private void handleDroneDetection(com.engindearing.omnicot.remoteid.RemoteIdData data) {
+        Log.d(TAG, "Drone detected: " + data.toString());
+
+        // Increment counter
+        dronesDetectedCount++;
+        updateStats();
+
+        // Add to activity log
+        String activity = "Drone detected: " + data.getUniqueId() +
+                " at " + String.format("%.6f", data.getUasLat()) + ", " +
+                String.format("%.6f", data.getUasLon());
+        addActivity(activity);
+
+        // Send to receiver for CoT conversion and dispatch
+        if (receiver != null) {
+            receiver.handleRemoteIdDetection(data);
+        }
+    }
+
+    public BluetoothManager getBluetoothManager() {
+        return bluetoothManager;
+    }
+
+    public static void incrementDronesDetected() {
+        dronesDetectedCount++;
+    }
+
+    public void dispose() {
+        if (bluetoothManager != null) {
+            bluetoothManager.shutdown();
+        }
     }
 }
