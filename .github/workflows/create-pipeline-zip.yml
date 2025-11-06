@@ -34,7 +34,8 @@ jobs:
       - name: Create pipeline submission zip
         run: |
           # Use git archive to create clean zip (respects .gitignore)
-          git archive --format=zip --output="${{ steps.version.outputs.zip_name }}" HEAD
+          # IMPORTANT: --prefix=omni-COT/ creates root directory structure required by TAK pipeline
+          git archive --format=zip --prefix=omni-COT/ --output="${{ steps.version.outputs.zip_name }}" HEAD
 
           # Verify the zip was created
           if [ ! -f "${{ steps.version.outputs.zip_name }}" ]; then
@@ -48,8 +49,18 @@ jobs:
             exit 1
           fi
 
+          # Verify template.local.properties IS in the zip
+          if ! unzip -l "${{ steps.version.outputs.zip_name }}" 2>/dev/null | grep -q "template.local.properties"; then
+            echo "WARNING: template.local.properties not found in zip"
+          fi
+
           echo "✅ Successfully created: ${{ steps.version.outputs.zip_name }}"
           ls -lh "${{ steps.version.outputs.zip_name }}"
+
+          # Show top-level structure to verify prefix worked
+          echo ""
+          echo "📁 Zip structure (top level):"
+          unzip -l "${{ steps.version.outputs.zip_name }}" | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
