@@ -79,7 +79,8 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         this.templateView = templateView;
 
         // Get COT dispatcher for federating changes
-        cotDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
+        // Use external dispatcher to send updates over the network to team members
+        cotDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
 
         // Initialize affiliation manager
         Log.d(TAG, "Initializing AffiliationManager with context: " + (pluginContext != null ? "valid" : "NULL"));
