@@ -6,8 +6,7 @@
 
 ## 📦 Downloads
 
-- **APK (Android):** `ATAK-Plugin-omnicot-0.2--5.4.0-civ-release.apk` (617 KB)
-- **AAB (Google Play):** `ATAK-Plugin-omnicot-0.2--5.4.0-civ-release.aab` (986 KB)
+- **APK (Android):** `ATAK-Plugin-omnicot-0.2--5.4.0-civ-release.apk` (602 KB)
 
 ## ✨ What's New in v0.2
 
