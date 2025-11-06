@@ -87,6 +87,52 @@ Tap the OmniCOT toolbar button to open the dashboard interface.
 2. Select "AOI Management" from the dashboard
 3. View detected areas and configure alerts
 
+## Integration with OmniTAK
+
+**OmniTAK** is a companion server application that aggregates CoT messages from multiple TAK servers, providing:
+- REST API for programmatic access to tactical data
+- Web dashboard for monitoring all connected ATAK devices
+- Advanced filtering and routing of CoT messages
+- Real-time metrics and monitoring
+
+**Use Together**: Run OmniCOT on ATAK devices in the field, and OmniTAK on a server to aggregate and analyze all tactical data in real-time.
+
+### Getting Started with OmniTAK
+
+1. **Clone OmniTAK**:
+   ```bash
+   git clone https://github.com/engindearing-projects/omni-TAK
+   cd omni-TAK
+   ```
+
+2. **Extract Certificates from ATAK** (device running OmniCOT):
+   ```bash
+   # Connect ATAK device via USB
+   ./scripts/setup-tak-connection.sh --adb
+   ```
+
+3. **Start OmniTAK**:
+   ```bash
+   cargo run --release -- --config config/config.yaml --admin-password your_password
+   ```
+
+4. **Access Web UI**: http://localhost:9443
+
+### Complete Integration Guide
+
+See **[OmniTAK Integration Guide](docs/OMNITAK_INTEGRATION.md)** for detailed instructions on:
+- Setting up OmniTAK to connect to your TAK servers
+- Extracting and configuring certificates
+- Filtering CoT messages by affiliation
+- Using the REST API to access tactical data
+- Multiple TAK server configurations
+- Monitoring and metrics
+
+**Resources**:
+- [OmniTAK Repository](https://github.com/engindearing-projects/omni-TAK)
+- [OmniTAK Setup Guide](https://github.com/engindearing-projects/omni-TAK/blob/main/docs/TAK_SERVER_SETUP.md)
+- [Integration Guide](docs/OMNITAK_INTEGRATION.md) (in this repository)
+
 ## Architecture
 
 OmniCOT follows standard ATAK plugin patterns:
