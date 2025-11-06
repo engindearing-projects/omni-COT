@@ -67,7 +67,8 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
     // State
     private MapItem selectedCotItem;
-    private CotDispatcher cotDispatcher;
+    private CotDispatcher externalDispatcher;
+    private CotDispatcher internalDispatcher;
     private AffiliationManager affiliationManager;
     private boolean isSelectingCot = false;
     private boolean showingDashboard = true;
@@ -78,9 +79,11 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         this.mapView = mapView;
         this.templateView = templateView;
 
-        // Get COT dispatcher for federating changes
-        // Use external dispatcher to send updates over the network to team members
-        cotDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
+        // Get COT dispatchers
+        // External dispatcher sends updates over the network to team members
+        externalDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
+        // Internal dispatcher routes CoT through ATAK's internal bus for local map display
+        internalDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
 
         // Initialize affiliation manager
         Log.d(TAG, "Initializing AffiliationManager with context: " + (pluginContext != null ? "valid" : "NULL"));
@@ -397,7 +400,9 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
 
             cotEvent.setDetail(detail);
 
-            cotDispatcher.dispatch(cotEvent);
+            // Dispatch to both internal (local map) and external (network) dispatchers
+            internalDispatcher.dispatch(cotEvent);
+            externalDispatcher.dispatch(cotEvent);
 
             // Increment dashboard counter
             DashboardActivity.incrementCOTModified();
@@ -501,10 +506,13 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
             CotEvent cotEvent = RemoteIdToCotConverter.convertToCotEvent(data);
 
             if (cotEvent != null) {
-                // Dispatch the CoT event to ATAK
-                cotDispatcher.dispatch(cotEvent);
+                // Dispatch to BOTH dispatchers:
+                // - Internal dispatcher: displays drone on local ATAK map
+                // - External dispatcher: sends to TAK server for team federation
+                internalDispatcher.dispatch(cotEvent);
+                externalDispatcher.dispatch(cotEvent);
 
-                Log.d(TAG, "Dispatched drone CoT event: " + cotEvent.getUID() +
+                Log.d(TAG, "Dispatched drone CoT event to internal & external: " + cotEvent.getUID() +
                         " at " + data.getUasLat() + ", " + data.getUasLon());
 
                 // Update dashboard
