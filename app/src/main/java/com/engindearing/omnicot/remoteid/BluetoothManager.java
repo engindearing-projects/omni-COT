@@ -451,11 +451,37 @@ public class BluetoothManager {
      * Start reading data from the device
      */
     private void startReading() {
-        if (socket == null) return;
+        if (socket == null) {
+            Log.w(TAG, "Cannot start reading - socket is null");
+            return;
+        }
+
+        if (!socket.isConnected()) {
+            Log.w(TAG, "Cannot start reading - socket is not connected");
+            return;
+        }
 
         readerThread = new Thread(() -> {
             try {
-                InputStream inputStream = socket.getInputStream();
+                // Double-check socket is still valid when thread starts
+                if (socket == null || !socket.isConnected()) {
+                    Log.w(TAG, "Socket closed before reader thread started");
+                    return;
+                }
+
+                InputStream inputStream;
+                try {
+                    inputStream = socket.getInputStream();
+                } catch (IOException e) {
+                    // Socket was closed before we could get the stream
+                    if (e.getMessage() != null && e.getMessage().contains("Socket is closed")) {
+                        Log.w(TAG, "Socket was closed before starting read - ignoring");
+                        return; // Exit gracefully without notifying as error
+                    } else {
+                        throw e; // Re-throw other IOExceptions
+                    }
+                }
+
                 // Use larger buffer size (8KB) for better performance with burst traffic
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), 8192);
                 StringBuilder jsonBuffer = new StringBuilder();
