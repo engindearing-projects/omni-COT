@@ -67,6 +67,37 @@ Alert configuration interface:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions.
 
+### TAK.gov Pipeline Submission
+
+This repository includes a script that creates **three submission packages** for different ATAK versions:
+
+```bash
+./make-pipeline-zip.sh
+```
+
+**Output:**
+- `omnicot-pipeline-atak5.3.0-{timestamp}.zip` - For ATAK 5.3.0 (stable)
+- `omnicot-pipeline-atak5.4.0-{timestamp}.zip` - For ATAK 5.4.0 (current)
+- `omnicot-pipeline-atak5.5.0-{timestamp}.zip` - For ATAK 5.5.0 (beta)
+
+Each zip contains:
+- Source code configured for the target ATAK version
+- Build configuration (build.gradle with `ATAK_VERSION` set appropriately)
+- All resources and documentation
+- Excludes credentials (local.properties) and build artifacts
+
+**Upload to TAK.gov:**
+1. Go to https://tak.gov/third-party-plugins
+2. Upload each zip to the corresponding ATAK version pipeline
+3. Wait for TAK.gov to build and sign (~5-10 minutes per version)
+4. Download the official signed APKs for distribution
+
+**Benefits:**
+- Multi-version support: Works with ATAK 5.3, 5.4, and 5.5
+- Officially signed by TAK.gov
+- Passes Fortify security scanning
+- Ready for enterprise distribution
+
 ## Usage
 
 ### Accessing the Dashboard
