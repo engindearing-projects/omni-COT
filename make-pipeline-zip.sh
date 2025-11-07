@@ -67,7 +67,8 @@ create_version_zip() {
     git add app/build.gradle >/dev/null 2>&1
 
     # Create a temporary commit (won't be pushed)
-    git commit -m "Temp: Set ATAK version to ${ATAK_VERSION} for pipeline submission" >/dev/null 2>&1
+    # Use --allow-empty in case the version is already set correctly
+    git commit --allow-empty -m "Temp: Set ATAK version to ${ATAK_VERSION} for pipeline submission" >/dev/null 2>&1
 
     # Create zip from this commit
     git archive --format=zip --prefix=omnicot/ --output="$DEST_PATH" HEAD
