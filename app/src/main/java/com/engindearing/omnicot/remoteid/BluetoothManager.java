@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -455,57 +456,104 @@ public class BluetoothManager {
         readerThread = new Thread(() -> {
             try {
                 InputStream inputStream = socket.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                // Use larger buffer size (8KB) for better performance with burst traffic
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), 8192);
                 StringBuilder jsonBuffer = new StringBuilder();
                 int braceCount = 0;
                 boolean inJson = false;
 
-                Log.d(TAG, "Started reading data");
+                Log.d(TAG, "Started reading data with buffered array reads");
+
+                // Use char array for more efficient reading
+                char[] buffer = new char[1024];
 
                 while (shouldRun && isConnected) {
-                    int ch = reader.read();
-                    if (ch == -1) {
-                        Log.w(TAG, "End of stream reached");
-                        break;
-                    }
-
-                    char c = (char) ch;
-
-                    // JSON parsing state machine
-                    if (c == '{') {
-                        if (!inJson) {
-                            inJson = true;
-                            jsonBuffer.setLength(0);
+                    try {
+                        // Check if data is available before blocking read
+                        if (!reader.ready()) {
+                            Thread.sleep(10); // Small sleep to prevent busy-wait
+                            continue;
                         }
-                        braceCount++;
-                        jsonBuffer.append(c);
-                    } else if (c == '}') {
-                        if (inJson) {
-                            jsonBuffer.append(c);
-                            braceCount--;
 
-                            if (braceCount == 0) {
-                                // Complete JSON object received
-                                String jsonString = jsonBuffer.toString();
-                                processJsonData(jsonString);
-                                inJson = false;
-                                jsonBuffer.setLength(0);
+                        int numRead = reader.read(buffer, 0, buffer.length);
+                        if (numRead == -1) {
+                            Log.w(TAG, "End of stream reached");
+                            break;
+                        }
+
+                        Log.d(TAG, "Read " + numRead + " characters from stream");
+
+                        // Process buffer content
+                        for (int i = 0; i < numRead; i++) {
+                            char c = buffer[i];
+
+                            // JSON parsing state machine
+                            if (c == '{') {
+                                if (!inJson) {
+                                    inJson = true;
+                                    jsonBuffer.setLength(0);
+                                }
+                                braceCount++;
+                                jsonBuffer.append(c);
+                            } else if (c == '}') {
+                                if (inJson) {
+                                    jsonBuffer.append(c);
+                                    braceCount--;
+
+                                    if (braceCount == 0) {
+                                        // Complete JSON object received
+                                        String jsonString = jsonBuffer.toString();
+                                        Log.d(TAG, "Received complete JSON: " + jsonString.substring(0, Math.min(100, jsonString.length())) + (jsonString.length() > 100 ? "..." : ""));
+                                        try {
+                                            processJsonData(jsonString);
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Error processing JSON data: " + jsonString, e);
+                                            e.printStackTrace();
+                                            // Don't break the read loop - continue reading
+                                        }
+                                        inJson = false;
+                                        jsonBuffer.setLength(0);
+                                    }
+                                }
+                            } else if (inJson) {
+                                jsonBuffer.append(c);
                             }
                         }
-                    } else if (inJson) {
-                        jsonBuffer.append(c);
+
+                    } catch (InterruptedIOException | InterruptedException e) {
+                        // Thread was interrupted - normal shutdown
+                        Log.d(TAG, "Reader thread interrupted, shutting down");
+                        break;
+                    } catch (IOException e) {
+                        // IOException on read - connection problem
+                        if (shouldRun) {
+                            Log.e(TAG, "IOException while reading data", e);
+                            mainHandler.post(() -> notifyError("Connection lost: " + e.getMessage()));
+                        }
+                        break;
+                    } catch (Exception e) {
+                        // Unexpected exception - log but don't break connection
+                        Log.e(TAG, "Unexpected error in read loop", e);
+                        e.printStackTrace();
+                        // Continue reading - don't break the connection for non-IO errors
                     }
                 }
+
+                Log.d(TAG, "Read loop exited");
 
             } catch (IOException e) {
                 if (shouldRun) {
-                    Log.e(TAG, "Error reading data", e);
-                    notifyError("Connection lost: " + e.getMessage());
+                    Log.e(TAG, "Error initializing stream reader", e);
+                    mainHandler.post(() -> notifyError("Connection lost: " + e.getMessage()));
                 }
             } finally {
-                cleanup();
-                if (shouldRun) {
-                    notifyDisconnected();
+                // Only cleanup if we're still the owner of the connection
+                if (isConnected) {
+                    Log.d(TAG, "Read thread ending, calling cleanup");
+                    cleanup();
+                    mainHandler.post(() -> notifyDisconnected());
+                } else {
+                    Log.d(TAG, "Read thread ending, already disconnected");
                 }
             }
         });
@@ -548,18 +596,34 @@ public class BluetoothManager {
     /**
      * Clean up resources
      */
-    private void cleanup() {
+    private synchronized void cleanup() {
+        // Prevent double cleanup
+        if (!isConnected && socket == null) {
+            Log.d(TAG, "cleanup() called but already cleaned up, skipping");
+            return;
+        }
+
+        Log.d(TAG, "Starting cleanup");
         isConnected = false;
         shouldRun = false;
 
+        // Wait for reader thread to finish
         if (readerThread != null) {
             readerThread.interrupt();
+            try {
+                readerThread.join(2000); // Wait up to 2 seconds
+                Log.d(TAG, "Reader thread joined successfully");
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Interrupted while waiting for reader thread to finish");
+            }
             readerThread = null;
         }
 
+        // Now safe to close socket
         if (socket != null) {
             try {
                 socket.close();
+                Log.d(TAG, "Socket closed successfully");
             } catch (IOException e) {
                 Log.e(TAG, "Error closing socket", e);
             }
@@ -567,6 +631,7 @@ public class BluetoothManager {
         }
 
         connectedDevice = null;
+        Log.d(TAG, "Cleanup completed");
     }
 
     /**

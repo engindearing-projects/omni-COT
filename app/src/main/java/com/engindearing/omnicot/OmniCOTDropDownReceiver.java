@@ -94,6 +94,13 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         // Get COT dispatcher for federating changes
         // Use external dispatcher to send updates over the network to team members
         cotDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
+        if (cotDispatcher == null) {
+            Log.e(TAG, "WARNING: CotDispatcher is NULL during initialization!");
+            Log.e(TAG, "CotMapComponent may not be fully initialized yet.");
+            Log.e(TAG, "Drone detections will attempt to re-initialize dispatcher.");
+        } else {
+            Log.d(TAG, "CotDispatcher initialized successfully");
+        }
 
         // Initialize affiliation manager
         Log.d(TAG, "Initializing AffiliationManager with context: " + (pluginContext != null ? "valid" : "NULL"));
@@ -565,6 +572,19 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
      */
     public void handleRemoteIdDetection(RemoteIdData data) {
         try {
+            // Check if cotDispatcher is available
+            if (cotDispatcher == null) {
+                Log.e(TAG, "CotDispatcher is null! Cannot dispatch drone detection.");
+                Log.e(TAG, "This usually means CotMapComponent is not yet initialized.");
+                // Try to re-initialize the dispatcher
+                cotDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
+                if (cotDispatcher == null) {
+                    Log.e(TAG, "Failed to re-initialize CotDispatcher. Drone will not appear on map.");
+                    DashboardActivity.addActivity("ERROR: Cannot display drone - CoT dispatcher unavailable");
+                    return;
+                }
+            }
+
             // Convert Remote ID data to CoT event
             CotEvent cotEvent = RemoteIdToCotConverter.convertToCotEvent(data);
 
@@ -581,9 +601,14 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
                         " displayed on map");
             } else {
                 Log.w(TAG, "Failed to convert Remote ID data to CoT event");
+                Log.w(TAG, "RemoteIdData: " + data.toString());
+                DashboardActivity.addActivity("WARNING: Failed to convert drone data to CoT");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error handling Remote ID detection", e);
+            Log.e(TAG, "Exception details: " + e.getMessage());
+            e.printStackTrace();
+            DashboardActivity.addActivity("ERROR: Exception while processing drone - " + e.getMessage());
         }
     }
 
