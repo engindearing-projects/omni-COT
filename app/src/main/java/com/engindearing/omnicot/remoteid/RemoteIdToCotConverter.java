@@ -16,9 +16,11 @@ public class RemoteIdToCotConverter {
     // CoT type prefix for different drone classifications
     // Using 'u' (unknown) by default since we don't know if drone is friend or foe
     // Format: a-{affiliation}-A-{battle dimension}-{function}
+    // Standard MIL-STD-2525C types for UAS/drones
     // a-u-A = Airborne, Unknown affiliation
-    private static final String COT_TYPE_DRONE_UNKNOWN = "a-u-A-M-F-Q-r"; // Unknown air track, rotary wing
-    private static final String COT_TYPE_DRONE_HOSTILE = "a-h-A-M-F-Q-r"; // Hostile air track, rotary wing
+    // a-u-A-M-H-Q = Unknown airborne military helicopter/multirotor UAS
+    private static final String COT_TYPE_DRONE_UNKNOWN = "a-u-A-M-H-Q"; // Unknown UAS (multirotor)
+    private static final String COT_TYPE_DRONE_HOSTILE = "a-h-A-M-H-Q"; // Hostile UAS (multirotor)
 
     /**
      * Convert a Remote ID detection to a CoT event
