@@ -79,6 +79,7 @@ public class AOIAdapter extends RecyclerView.Adapter<AOIAdapter.AOIViewHolder> {
             btnZoomTo.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    HapticFeedbackHelper.performLightClick(v);
                     zoomToAOI(item);
                 }
             });
@@ -86,6 +87,7 @@ public class AOIAdapter extends RecyclerView.Adapter<AOIAdapter.AOIViewHolder> {
             btnConfigureAlert.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    HapticFeedbackHelper.performMediumClick(v);
                     configureAlert(item);
                 }
             });
@@ -98,28 +100,13 @@ public class AOIAdapter extends RecyclerView.Adapter<AOIAdapter.AOIViewHolder> {
                     // Calculate center point
                     GeoPoint center = bounds.getCenter(null);
 
-                    // Calculate appropriate scale based on bounds
-                    double north = bounds.getNorth();
-                    double south = bounds.getSouth();
-                    double east = bounds.getEast();
-                    double west = bounds.getWest();
-
-                    // Calculate diagonal distance to determine zoom level
-                    double distance = GeoCalculations.distanceTo(
-                            new GeoPoint(south, west),
-                            new GeoPoint(north, east));
-
-                    // Set scale based on distance (smaller scale = more zoomed in)
-                    double scale = Math.max(distance * 1.5, 100.0); // minimum 100m scale
-
-                    // Zoom to the AOI
+                    // Just pan to the center without zooming
                     mapView.getMapController().panTo(center, true);
-                    mapView.getMapController().zoomTo(scale, true);
 
-                    Log.d(TAG, "Zoomed to AOI: " + item.getName() + " at " + center);
+                    Log.d(TAG, "Panned to AOI: " + item.getName() + " at " + center);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error zooming to AOI", e);
+                Log.e(TAG, "Error panning to AOI", e);
             }
         }
 

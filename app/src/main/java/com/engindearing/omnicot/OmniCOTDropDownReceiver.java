@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import com.atakmap.android.gui.PluginSpinner;
 import android.widget.TextView;
@@ -37,11 +38,17 @@ import com.engindearing.omnicot.remoteid.RemoteIdToCotConverter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Stack;
 
 public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDown.OnStateListener {
 
     public static final String TAG = OmniCOTDropDownReceiver.class.getSimpleName();
     public static final String SHOW_PLUGIN = "com.engindearing.omnicot.SHOW_PLUGIN";
+
+    // Navigation constants
+    private static final String DASHBOARD = "dashboard";
+    private static final String COT_MANAGEMENT = "cot_management";
+    private static final String AOI_MANAGEMENT = "aoi_management";
 
     private final Context pluginContext;
     private final MapView mapView;
@@ -71,6 +78,12 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     private AffiliationManager affiliationManager;
     private boolean isSelectingCot = false;
     private boolean showingDashboard = true;
+    private List<MapItem> recentCOTItems = new ArrayList<>();
+
+    // Navigation state
+    private Stack<String> navigationStack = new Stack<>();
+    private String currentScreen = DASHBOARD;
+    private ImageButton btnBack;
 
     public OmniCOTDropDownReceiver(final MapView mapView, final Context context, View templateView) {
         super(mapView);
@@ -107,6 +120,9 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
     }
 
     private void initializeManagementComponents() {
+        // Back button
+        btnBack = managementView.findViewById(R.id.btnBack);
+
         // COT Management components
         btnSelectCot = managementView.findViewById(R.id.btnSelectCot);
         cotAffiliationSection = managementView.findViewById(R.id.cotAffiliationSection);
@@ -162,6 +178,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         btnSelectCot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 startCotSelection();
             }
         });
@@ -169,6 +186,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         btnUpdateAffiliation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performHeavyClick(v);
                 updateCotAffiliation();
             }
         });
@@ -177,6 +195,7 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         btnRefreshAoi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 refreshAOIList();
             }
         });
@@ -184,36 +203,75 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         btnCreateAoi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 createNewAOI();
             }
         });
     }
 
+    private void setupBackButton() {
+        if (btnBack != null) {
+            btnBack.setVisibility(View.VISIBLE);
+            btnBack.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    navigateBack();
+                }
+            });
+        }
+    }
+
+    private void navigateBack() {
+        HapticFeedbackHelper.performLightClick(btnBack);
+        if (!navigationStack.isEmpty()) {
+            String previousScreen = navigationStack.pop();
+            if (DASHBOARD.equals(previousScreen)) {
+                showDashboard();
+            }
+        }
+    }
+
     public void showCOTManagement() {
+        if (navigationStack.isEmpty() || !DASHBOARD.equals(navigationStack.peek())) {
+            navigationStack.push(DASHBOARD);
+        }
+        currentScreen = COT_MANAGEMENT;
         showingDashboard = false;
         setRetain(true);
         closeDropDown();
         showDropDown(managementView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH, HALF_HEIGHT, false, this);
+        setupBackButton();
         Log.d(TAG, "Switched to COT Management view");
     }
 
     public void showAOIManagement() {
+        if (navigationStack.isEmpty() || !DASHBOARD.equals(navigationStack.peek())) {
+            navigationStack.push(DASHBOARD);
+        }
+        currentScreen = AOI_MANAGEMENT;
         showingDashboard = false;
         setRetain(true);
         closeDropDown();
         showDropDown(managementView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH, HALF_HEIGHT, false, this);
+        setupBackButton();
         // Automatically refresh the AOI list when opening
         refreshAOIList();
         Log.d(TAG, "Switched to AOI Management view");
     }
 
     public void showDashboard() {
+        currentScreen = DASHBOARD;
+        navigationStack.clear();
         showingDashboard = true;
         setRetain(true);
         closeDropDown();
         showDropDown(templateView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH, HALF_HEIGHT, false, this);
         if (dashboardActivity != null) {
             dashboardActivity.updateStats();
+        }
+        // Hide back button on dashboard
+        if (btnBack != null) {
+            btnBack.setVisibility(View.GONE);
         }
         Log.d(TAG, "Switched to Dashboard view");
     }
@@ -241,9 +299,19 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         mapView.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_CLICK, clickListener);
     }
 
+    private void addToRecentCOT(MapItem item) {
+        recentCOTItems.remove(item); // Remove if already exists
+        recentCOTItems.add(0, item); // Add to front
+        if (recentCOTItems.size() > 5) {
+            recentCOTItems.remove(recentCOTItems.size() - 1);
+        }
+        Log.d(TAG, "Added to recent COT: " + item.getTitle() + " (Total recent: " + recentCOTItems.size() + ")");
+    }
+
     private void onCotSelected(MapItem item) {
         isSelectingCot = false;
         selectedCotItem = item;
+        addToRecentCOT(item);
 
         btnSelectCot.setText("Select COT to Modify");
         btnSelectCot.setEnabled(true);
@@ -517,6 +585,15 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         } catch (Exception e) {
             Log.e(TAG, "Error handling Remote ID detection", e);
         }
+    }
+
+    @Override
+    public boolean onBackButtonPressed() {
+        if (!DASHBOARD.equals(currentScreen)) {
+            navigateBack();
+            return true;
+        }
+        return super.onBackButtonPressed();
     }
 
     @Override

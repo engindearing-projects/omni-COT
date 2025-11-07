@@ -75,8 +75,8 @@ public class CotAffiliationMenuReceiver extends BroadcastReceiver {
         }
 
         // Get the MapItem that was tapped
-        // The MapMenuReceiver provides the current menu subject via getMenuSubject()
-        MapItem mapItem = MapMenuReceiver.getMapMenuReceiver().getMenuSubject();
+        // The MapMenuReceiver provides the current menu subject via getCurrentItem()
+        MapItem mapItem = MapMenuReceiver.getCurrentItem();
         if (mapItem == null) {
             Log.e(TAG, "No MapItem available for affiliation update");
             Toast.makeText(context, "No COT item selected", Toast.LENGTH_SHORT).show();

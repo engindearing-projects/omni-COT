@@ -109,6 +109,7 @@ public class DashboardActivity {
         cardCOTManagement.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 onCOTManagementClick();
             }
         });
@@ -116,6 +117,7 @@ public class DashboardActivity {
         cardAOIManagement.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 onAOIManagementClick();
             }
         });
@@ -123,6 +125,7 @@ public class DashboardActivity {
         cardCreateAlert.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 onCreateAlertClick();
             }
         });
@@ -130,6 +133,7 @@ public class DashboardActivity {
         cardViewHistory.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 onViewHistoryClick();
             }
         });
@@ -137,6 +141,7 @@ public class DashboardActivity {
         btnSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 Toast.makeText(context, "Settings - Coming Soon", Toast.LENGTH_SHORT).show();
             }
         });
@@ -144,6 +149,7 @@ public class DashboardActivity {
         btnHelp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 showHelp();
             }
         });
@@ -152,6 +158,7 @@ public class DashboardActivity {
         btnBluetoothConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 onBluetoothConnectClick();
             }
         });
@@ -159,6 +166,7 @@ public class DashboardActivity {
         btnBluetoothDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 onBluetoothDisconnectClick();
             }
         });
@@ -166,6 +174,7 @@ public class DashboardActivity {
         btnBluetoothRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 onBluetoothRefreshClick();
             }
         });

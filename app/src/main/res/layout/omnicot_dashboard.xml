@@ -31,16 +31,16 @@
 
             <ImageButton
                 android:id="@+id/btnSettings"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:background="@android:color/transparent"
                 android:src="@android:drawable/ic_menu_preferences"
                 android:contentDescription="Settings" />
 
             <ImageButton
                 android:id="@+id/btnHelp"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:layout_marginStart="8dp"
                 android:background="@android:color/transparent"
                 android:src="@android:drawable/ic_menu_info_details"
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/new_dark_button_bg"
-            android:padding="12dp"
+            android:padding="16dp"
             android:layout_marginBottom="16dp">
 
             <TextView
@@ -82,8 +82,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Active AOIs"
-                        android:textSize="11sp"
-                        android:textColor="#AAAAAA" />
+                        android:textSize="14sp"
+                        android:textColor="#CCCCCC" />
 
                     <TextView
                         android:id="@+id/txtActiveAOIs"
@@ -113,8 +113,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Active Alerts"
-                        android:textSize="11sp"
-                        android:textColor="#AAAAAA" />
+                        android:textSize="14sp"
+                        android:textColor="#CCCCCC" />
 
                     <TextView
                         android:id="@+id/txtActiveAlerts"
@@ -143,8 +143,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="COT Modified"
-                        android:textSize="11sp"
-                        android:textColor="#AAAAAA" />
+                        android:textSize="14sp"
+                        android:textColor="#CCCCCC" />
 
                     <TextView
                         android:id="@+id/txtCOTModified"
@@ -188,7 +188,7 @@
                 android:orientation="vertical"
                 android:background="@drawable/new_dark_button_bg"
                 android:padding="12dp"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="12dp"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true">
@@ -222,7 +222,7 @@
                 android:orientation="vertical"
                 android:background="@drawable/new_dark_button_bg"
                 android:padding="12dp"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="12dp"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true">
@@ -266,7 +266,7 @@
                 android:orientation="vertical"
                 android:background="@drawable/new_dark_button_bg"
                 android:padding="12dp"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="12dp"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true">
@@ -300,7 +300,7 @@
                 android:orientation="vertical"
                 android:background="@drawable/new_dark_button_bg"
                 android:padding="12dp"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="12dp"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true">
@@ -395,8 +395,8 @@
 
                 <ImageButton
                     android:id="@+id/btnBluetoothRefresh"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="@android:color/transparent"
                     android:src="@android:drawable/ic_menu_rotate"
                     android:tint="@color/heading_yellow"
@@ -409,8 +409,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="gyb_detect device"
-                android:textSize="12sp"
-                android:textColor="#AAAAAA"
+                android:textSize="14sp"
+                android:textColor="#CCCCCC"
                 android:paddingTop="4dp"
                 android:paddingBottom="8dp" />
 
@@ -463,8 +463,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Drones Detected"
-                        android:textSize="11sp"
-                        android:textColor="#AAAAAA" />
+                        android:textSize="14sp"
+                        android:textColor="#CCCCCC" />
 
                     <TextView
                         android:id="@+id/txtDronesDetected"
@@ -493,8 +493,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Battery"
-                        android:textSize="11sp"
-                        android:textColor="#AAAAAA" />
+                        android:textSize="14sp"
+                        android:textColor="#CCCCCC" />
 
                     <TextView
                         android:id="@+id/txtBatteryLevel"
@@ -557,7 +557,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="OmniCOT v0.1 - Advanced Tactical Coordination"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:textColor="#666666"
             android:textAlignment="center"
             android:paddingTop="16dp" />

@@ -25,6 +25,52 @@
             android:textSize="14sp"
             android:paddingBottom="12dp" />
 
+        <!-- Quick Presets Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quick Presets:"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="16dp">
+
+            <Button
+                android:id="@+id/btnPresetQuickAlert"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="24hr All"
+                android:textSize="12sp"
+                android:padding="8dp"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnPresetEntry"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1hr Entry"
+                android:textSize="12sp"
+                android:padding="8dp"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnPresetMovement"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="4hr Both"
+                android:textSize="12sp"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
         <!-- Enable Alert -->
         <CheckBox
             android:id="@+id/checkEnableAlert"

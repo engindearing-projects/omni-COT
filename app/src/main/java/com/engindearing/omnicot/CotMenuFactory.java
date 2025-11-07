@@ -4,12 +4,11 @@ import android.content.Context;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.android.menu.MapMenuFactory;
 import com.atakmap.android.menu.MapMenuWidget;
 import com.atakmap.android.menu.MenuResourceFactory;
 import com.atakmap.android.menu.MenuMapAdapter;
-import com.atakmap.android.menu.MapAssets;
-import com.atakmap.app.preferences.ToolsPreferenceFragment.PhraseParser;
 import com.atakmap.coremap.log.Log;
 
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class CotMenuFactory implements MapMenuFactory {
         }
 
         // Create the menu resource factory for resolving menus from XML
-        menuResourceFactory = new MenuResourceFactory(mapAssets, adapter);
+        menuResourceFactory = new MenuResourceFactory(mapView, mapView.getMapData(), mapAssets, adapter);
 
         Log.d(TAG, "CotMenuFactory initialized");
     }
@@ -90,28 +89,12 @@ public class CotMenuFactory implements MapMenuFactory {
                    " (type: " + itemType + ")");
 
         try {
-            // Build configuration environment for menu resolution
-            PhraseParser.Parameters params = new PhraseParser.Parameters();
-
-            // Add MapItem resolver for accessing item metadata in menu XML
-            params.setResolver('$', new PhraseParser.BundleResolver(mapItem));
-
-            PhraseParser.ConfigEnvironment configEnvironment =
-                new PhraseParser.ConfigEnvironment.Builder()
-                    .setMapAssets(menuResourceFactory.getMapAssets())
-                    .setPhraseParserParameters(params)
-                    .build();
-
             // Resolve menu from XML resource
             // The menu_filters.xml will map COT types (a-.*) to cot_affiliation_menu.xml
             MapMenuWidget menuWidget = menuResourceFactory.create(mapItem);
 
             if (menuWidget != null) {
                 Log.d(TAG, "Successfully created menu widget for COT item");
-
-                // Store MapItem reference in menu widget metadata for click handlers
-                menuWidget.getMetaMap().put("cot_mapitem", mapItem);
-
                 return menuWidget;
             } else {
                 Log.w(TAG, "MenuResourceFactory returned null for COT item");

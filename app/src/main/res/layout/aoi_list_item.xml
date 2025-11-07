@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="16dp"
+    android:minHeight="80dp"
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true">
 
@@ -30,7 +31,7 @@
                 android:id="@+id/aoiType"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:text="Shape Type"
                 android:paddingTop="2dp" />
 
@@ -38,7 +39,7 @@
                 android:id="@+id/aoiAlertStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:text="No alerts configured"
                 android:paddingTop="2dp" />
 
@@ -56,6 +57,7 @@
                 android:layout_height="wrap_content"
                 android:text="Zoom"
                 android:minWidth="0dp"
+                android:minHeight="48dp"
                 android:padding="8dp" />
 
             <Button
@@ -64,6 +66,8 @@
                 android:layout_height="wrap_content"
                 android:text="Alert"
                 android:minWidth="0dp"
+                android:minHeight="48dp"
+                android:layout_marginStart="12dp"
                 android:padding="8dp" />
 
         </LinearLayout>

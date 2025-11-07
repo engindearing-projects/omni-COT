@@ -66,6 +66,11 @@ public class AlertConfigDialog {
         Button btnSaveAlert = dialogView.findViewById(R.id.btnSaveAlert);
         Button btnCancelAlert = dialogView.findViewById(R.id.btnCancelAlert);
 
+        // Preset buttons
+        Button btnPresetQuickAlert = dialogView.findViewById(R.id.btnPresetQuickAlert);
+        Button btnPresetEntry = dialogView.findViewById(R.id.btnPresetEntry);
+        Button btnPresetMovement = dialogView.findViewById(R.id.btnPresetMovement);
+
         // Set current values
         alertAoiName.setText("AOI: " + aoiItem.getName());
         checkEnableAlert.setChecked(aoiItem.isAlertEnabled());
@@ -91,10 +96,36 @@ public class AlertConfigDialog {
         builder.setView(dialogView);
         dialog = builder.create();
 
+        // Preset button listeners
+        btnPresetQuickAlert.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
+                applyQuickAlertPreset(checkEnableAlert, spinnerTriggerType, spinnerMonitoredTypes, editAlertDuration);
+            }
+        });
+
+        btnPresetEntry.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
+                applyEntryPreset(checkEnableAlert, spinnerTriggerType, spinnerMonitoredTypes, editAlertDuration);
+            }
+        });
+
+        btnPresetMovement.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
+                applyMovementPreset(checkEnableAlert, spinnerTriggerType, spinnerMonitoredTypes, editAlertDuration);
+            }
+        });
+
         // Button listeners
         btnCancelAlert.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performLightClick(v);
                 dialog.dismiss();
             }
         });
@@ -102,6 +133,7 @@ public class AlertConfigDialog {
         btnSaveAlert.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                HapticFeedbackHelper.performMediumClick(v);
                 saveAlertConfiguration(
                         checkEnableAlert.isChecked(),
                         spinnerTriggerType.getSelectedItemPosition(),
@@ -265,5 +297,39 @@ public class AlertConfigDialog {
         AtakBroadcast.getInstance().registerSystemReceiver(breachReceiver, filter);
 
         Log.d(TAG, "Breach listener registered for: " + aoiItem.getName());
+    }
+
+    // Preset configuration methods
+    private void applyQuickAlertPreset(CheckBox checkEnableAlert, PluginSpinner spinnerTriggerType,
+                                       PluginSpinner spinnerMonitoredTypes, EditText editAlertDuration) {
+        // Quick Alert - 24hr All Types
+        checkEnableAlert.setChecked(true);
+        spinnerTriggerType.setSelection(2); // Both (Entry and Exit)
+        spinnerMonitoredTypes.setSelection(0); // All
+        editAlertDuration.setText("24");
+        Toast.makeText(context, "Applied: 24hr All Types Alert", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "Applied Quick Alert preset");
+    }
+
+    private void applyEntryPreset(CheckBox checkEnableAlert, PluginSpinner spinnerTriggerType,
+                                  PluginSpinner spinnerMonitoredTypes, EditText editAlertDuration) {
+        // Entry Alert - 1hr
+        checkEnableAlert.setChecked(true);
+        spinnerTriggerType.setSelection(0); // Entry
+        spinnerMonitoredTypes.setSelection(0); // All
+        editAlertDuration.setText("1");
+        Toast.makeText(context, "Applied: 1hr Entry Alert", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "Applied Entry Alert preset");
+    }
+
+    private void applyMovementPreset(CheckBox checkEnableAlert, PluginSpinner spinnerTriggerType,
+                                     PluginSpinner spinnerMonitoredTypes, EditText editAlertDuration) {
+        // Movement Alert - 4hr Both
+        checkEnableAlert.setChecked(true);
+        spinnerTriggerType.setSelection(2); // Both (Entry and Exit)
+        spinnerMonitoredTypes.setSelection(0); // All
+        editAlertDuration.setText("4");
+        Toast.makeText(context, "Applied: 4hr Movement Alert", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "Applied Movement Alert preset");
     }
 }

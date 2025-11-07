@@ -228,22 +228,19 @@ As documented in ATAK SDK:
 
 This implementation doesn't currently use submenus (single-level menu), so parenting complexity is minimal.
 
-## ConfigEnvironment and Resolvers
+## MenuResourceFactory Implementation
 
-The implementation uses ATAK's ConfigEnvironment pattern:
+The implementation uses ATAK's MenuResourceFactory which handles menu resolution from XML assets:
 
 ```java
-PhraseParser.Parameters params = new PhraseParser.Parameters();
-params.setResolver('$', new PhraseParser.BundleResolver(mapItem));
+// Create the menu resource factory for resolving menus from XML
+menuResourceFactory = new MenuResourceFactory(mapView, mapView.getMapData(), mapAssets, adapter);
 
-PhraseParser.ConfigEnvironment configEnvironment =
-    new PhraseParser.ConfigEnvironment.Builder()
-        .setMapAssets(menuResourceFactory.getMapAssets())
-        .setPhraseParserParameters(params)
-        .build();
+// Later, when creating the menu widget:
+MapMenuWidget menuWidget = menuResourceFactory.create(mapItem);
 ```
 
-This allows menu XML to reference MapItem metadata using `$` character, enabling dynamic menu customization based on item properties.
+The MenuResourceFactory automatically resolves the appropriate menu from XML based on the menu filters and the MapItem type. In ATAK 5.4.0, the PhraseParser and ConfigEnvironment approach from earlier versions is no longer needed - the MenuResourceFactory constructor takes the required parameters directly.
 
 ## Required Icons
 
