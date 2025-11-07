@@ -37,6 +37,9 @@ if ! git diff-index --quiet HEAD --; then
     fi
 fi
 
+# Store the current branch to return to it later
+ORIGINAL_BRANCH=$(git branch --show-current)
+
 # Create timestamp
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -73,7 +76,7 @@ create_version_zip() {
     if [ ! -f "$DEST_PATH" ]; then
         echo "ERROR: Failed to create zip file for ATAK ${ATAK_VERSION}!"
         # Cleanup
-        git checkout - >/dev/null 2>&1
+        git checkout "$ORIGINAL_BRANCH" >/dev/null 2>&1
         git branch -D "$TEMP_BRANCH" >/dev/null 2>&1
         exit 1
     fi
@@ -85,7 +88,7 @@ create_version_zip() {
     else
         echo "ERROR: ATAK version not correctly set in zip!"
         rm "$DEST_PATH"
-        git checkout - >/dev/null 2>&1
+        git checkout "$ORIGINAL_BRANCH" >/dev/null 2>&1
         git branch -D "$TEMP_BRANCH" >/dev/null 2>&1
         exit 1
     fi
@@ -97,7 +100,7 @@ create_version_zip() {
         echo "ERROR: local.properties found in zip! This should not happen!"
         echo "Check your .gitignore file"
         rm "$DEST_PATH"
-        git checkout - >/dev/null 2>&1
+        git checkout "$ORIGINAL_BRANCH" >/dev/null 2>&1
         git branch -D "$TEMP_BRANCH" >/dev/null 2>&1
         exit 1
     else
@@ -118,7 +121,7 @@ create_version_zip() {
     echo "   Size: $SIZE"
 
     # Cleanup: Go back to original branch and delete temp branch
-    git checkout - >/dev/null 2>&1
+    git checkout "$ORIGINAL_BRANCH" >/dev/null 2>&1
     git branch -D "$TEMP_BRANCH" >/dev/null 2>&1
 
     # Store info for summary
