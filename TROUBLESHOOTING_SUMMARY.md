@@ -96,6 +96,37 @@
 
 ---
 
+### 4. **Drone Icons Not Displaying on Map** ✅ FIXED
+**Symptom**:
+- Bluetooth connected successfully
+- gyb_detect detecting drones (turns red)
+- Dashboard shows "1 drone detected"
+- No drone icons appear on ATAK map
+
+**Root Cause**:
+- **Malformed CoT type** in RemoteIdToCotConverter
+- Type was `"a-u-A-M-F-Q-r"` which has conflicting aircraft designations:
+  - `F` = Fixed Wing aircraft
+  - `r` = Rotary wing aircraft (suffix)
+- ATAK couldn't parse the contradictory type and failed to render icon
+- Not compliant with MIL-STD-2525C CoT format
+
+**Fix Applied**:
+- Changed to proper MIL-STD-2525C format: `"a-u-A-M-H-Q"`
+  - `a` = Air
+  - `u` = Unknown affiliation
+  - `A` = Airborne
+  - `M` = Military
+  - `H` = Helicopter/Multirotor platform
+  - `Q` = Unmanned Aerial System
+- Hostile variant: `"a-h-A-M-H-Q"` (h = hostile)
+- Now ATAK correctly recognizes and displays drone icons
+
+**Files Modified**:
+- `app/src/main/java/com/engindearing/omnicot/remoteid/RemoteIdToCotConverter.java`
+
+---
+
 ## Monitoring Tools Created
 
 ### **monitor-logs.sh Script**
@@ -223,14 +254,18 @@ cd ~/Downloads/ATAK-CIV-5.4.0.27-SDK/plugins/omni-COT
 ## Git Commits
 
 ### Recent Fixes:
-1. **fa252bf** - Add defensive socket checks to prevent 'Socket is closed' errors
-2. **c1a3327** - Fix Bluetooth connection stability and CoT dispatcher issues
+1. **cd3b2ea** - Fix CoT type for Remote ID drones to display correctly
+2. **27aa22d** - Improve error reporting and fix null safety issues
+3. **fa252bf** - Add defensive socket checks to prevent 'Socket is closed' errors
+4. **c1a3327** - Fix Bluetooth connection stability and CoT dispatcher issues
 
 ### View Changes:
 ```bash
-git log --oneline -5
-git show fa252bf
-git show c1a3327
+git log --oneline -10
+git show cd3b2ea  # CoT type fix
+git show 27aa22d  # Error reporting improvements
+git show fa252bf  # Socket defensive checks
+git show c1a3327  # Bluetooth stability
 ```
 
 ---
@@ -264,11 +299,11 @@ git show c1a3327
 
 **Repository**: https://github.com/engindearing-projects/omni-COT
 **Branch**: main
-**Latest Version**: 0.6-fa252bf
+**Latest Version**: 0.6-cd3b2ea
 **ATAK SDK**: 5.4.0.27-CIV
 **Working Directory**: ~/Downloads/ATAK-CIV-5.4.0.27-SDK/plugins/omni-COT
 
 ---
 
 **Generated**: 2025-11-07
-**Last Updated**: fa252bf (Add defensive socket checks)
+**Last Updated**: cd3b2ea (Fix CoT type for proper drone icon display)
