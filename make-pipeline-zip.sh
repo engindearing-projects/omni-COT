@@ -57,7 +57,8 @@ create_version_zip() {
     git checkout -b "$TEMP_BRANCH" >/dev/null 2>&1
 
     # Modify build.gradle to set the ATAK version
-    sed -i.bak "s/ext.ATAK_VERSION = \"[0-9.]*\"/ext.ATAK_VERSION = \"${ATAK_VERSION}\"/" app/build.gradle
+    # Use sed without backup file on macOS
+    sed -i '' "s/ext.ATAK_VERSION = \"[0-9.]*\"/ext.ATAK_VERSION = \"${ATAK_VERSION}\"/" app/build.gradle
 
     # Stage the change
     git add app/build.gradle >/dev/null 2>&1
