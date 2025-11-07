@@ -34,7 +34,7 @@ fi
 
 # Create timestamp
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-ZIP_NAME="omni-COT-pipeline-$TIMESTAMP.zip"
+ZIP_NAME="omnicot-pipeline-$TIMESTAMP.zip"
 DEST_PATH="$SCRIPT_DIR/$ZIP_NAME"
 
 echo "Creating pipeline submission zip..."
@@ -43,8 +43,9 @@ echo "  Output: $DEST_PATH"
 echo ""
 
 # Use git archive to create clean zip (respects .gitignore)
-# Create zip with omni-COT root folder as required by TAK pipeline
-git archive --format=zip --prefix=omni-COT/ --output="$DEST_PATH" HEAD
+# Create zip with omnicot root folder as required by TAK pipeline
+# IMPORTANT: This must match rootProject.name in settings.gradle
+git archive --format=zip --prefix=omnicot/ --output="$DEST_PATH" HEAD
 
 # Verify the zip was created
 if [ ! -f "$DEST_PATH" ]; then
