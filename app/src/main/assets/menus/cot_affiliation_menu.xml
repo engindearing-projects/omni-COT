@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Main COT Affiliation Menu -->
+    <item
+        android:id="@+id/menu_cot_affiliation"
+        android:title="Update Affiliation">
+
+        <!-- Set as Unknown -->
+        <item
+            android:id="@+id/affiliation_unknown"
+            android:title="Unknown"
+            android:icon="@drawable/ic_menu_unknown"
+            android:orderInCategory="1">
+            <intent
+                android:action="com.engindearing.omnicot.UPDATE_AFFILIATION">
+                <extra
+                    android:name="affiliation"
+                    android:value="UNKNOWN" />
+            </intent>
+        </item>
+
+        <!-- Set as Assumed Friendly -->
+        <item
+            android:id="@+id/affiliation_friendly"
+            android:title="Assumed Friendly"
+            android:icon="@drawable/ic_menu_friendly"
+            android:orderInCategory="2">
+            <intent
+                android:action="com.engindearing.omnicot.UPDATE_AFFILIATION">
+                <extra
+                    android:name="affiliation"
+                    android:value="ASSUMED_FRIENDLY" />
+            </intent>
+        </item>
+
+        <!-- Set as Assumed Hostile -->
+        <item
+            android:id="@+id/affiliation_hostile"
+            android:title="Assumed Hostile"
+            android:icon="@drawable/ic_menu_hostile"
+            android:orderInCategory="3">
+            <intent
+                android:action="com.engindearing.omnicot.UPDATE_AFFILIATION">
+                <extra
+                    android:name="affiliation"
+                    android:value="ASSUMED_HOSTILE" />
+            </intent>
+        </item>
+
+        <!-- Set as Pending -->
+        <item
+            android:id="@+id/affiliation_pending"
+            android:title="Pending Review"
+            android:icon="@drawable/ic_menu_pending"
+            android:orderInCategory="4">
+            <intent
+                android:action="com.engindearing.omnicot.UPDATE_AFFILIATION">
+                <extra
+                    android:name="affiliation"
+                    android:value="PENDING" />
+            </intent>
+        </item>
+
+        <!-- Show Details (opens dropdown with full info) -->
+        <item
+            android:id="@+id/affiliation_details"
+            android:title="Show Details"
+            android:icon="@drawable/ic_menu_info"
+            android:orderInCategory="5">
+            <intent
+                android:action="com.engindearing.omnicot.SHOW_PLUGIN">
+                <extra
+                    android:name="showAffiliationDetails"
+                    android:value="true" />
+            </intent>
+        </item>
+
+    </item>
+
+</menu>
