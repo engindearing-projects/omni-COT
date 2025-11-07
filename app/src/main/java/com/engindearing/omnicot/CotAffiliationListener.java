@@ -67,12 +67,17 @@ public class CotAffiliationListener implements CommsLogger {
 
                         if (existingData != null) {
                             // Update existing affiliation if it's different
-                            if (existingData.getAffiliation() != affiliation ||
-                                !existingData.getMarkedBy().equals(markedBy)) {
+                            boolean affiliationChanged = existingData.getAffiliation() != affiliation;
+                            boolean markerChanged = markedBy != null && !markedBy.equals(existingData.getMarkedBy());
 
+                            if (affiliationChanged || markerChanged) {
                                 existingData.setAffiliation(affiliation);
-                                existingData.setMarkedBy(markedBy);
-                                existingData.setServerConnection(server);
+                                if (markedBy != null) {
+                                    existingData.setMarkedBy(markedBy);
+                                }
+                                if (server != null) {
+                                    existingData.setServerConnection(server);
+                                }
                                 if (notes != null && !notes.isEmpty()) {
                                     existingData.setNotes(notes);
                                 }
@@ -116,7 +121,8 @@ public class CotAffiliationListener implements CommsLogger {
             } else {
                 // Update server connection for existing affiliation
                 AffiliationData existingData = affiliationManager.getAffiliation(uid);
-                if (existingData != null && !server.equals(existingData.getServerConnection())) {
+                if (existingData != null && server != null &&
+                    !server.equals(existingData.getServerConnection())) {
                     existingData.setServerConnection(server);
                     affiliationManager.setAffiliation(existingData);
                 }

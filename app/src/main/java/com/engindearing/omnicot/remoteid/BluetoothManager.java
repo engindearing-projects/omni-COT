@@ -613,7 +613,9 @@ public class BluetoothManager {
                         listener.onRemoteIdData(data);
                     }
                 } else {
-                    Log.d(TAG, "Ignoring detection with invalid location");
+                    Log.w(TAG, "Ignoring detection with invalid location - Drone: " + data.getUniqueId() +
+                            " Lat: " + data.getUasLat() + ", Lon: " + data.getUasLon());
+                    mainHandler.post(() -> notifyError("Drone detected but has invalid GPS coordinates (0.0, 0.0). Configure ESP32 spoofer with valid location."));
                 }
             }
         });
