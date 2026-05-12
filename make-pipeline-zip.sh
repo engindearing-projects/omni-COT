@@ -3,10 +3,14 @@
 # Creates clean zips for TAK third-party pipeline submission
 # Usage: ./make-pipeline-zip.sh
 #
-# This script creates three submission zips for different ATAK versions:
-# - ATAK 5.3.0 (current Play Store stable)
-# - ATAK 5.4.0 (latest Play Store)
-# - ATAK 5.5.0 (beta/preview)
+# This script creates submission zips for ATAK 5.6 + 5.7 (the supported
+# range under the new ATAK 5.6+ build env). Plugins built against
+# ATAK 5.4 or earlier still ship from releases/v0.6/ — the build env
+# changed substantially at 5.6 (compileSdk 36, AGP 8.13, takdev 3.+).
+#
+# Versions produced:
+# - ATAK 5.6.0 (current stable)
+# - ATAK 5.7.0 (latest)
 
 set -e
 
@@ -132,13 +136,12 @@ create_version_zip() {
 # Clean up any previous temp file
 rm -f /tmp/omnicot-zips-$$.txt
 
-# Create zips for all three ATAK versions
-echo "Creating submission zips for ATAK 5.3, 5.4, and 5.5..."
+# Create zips for ATAK 5.6 + 5.7
+echo "Creating submission zips for ATAK 5.6 and 5.7..."
 echo ""
 
-create_version_zip "5.3.0" "Stable"
-create_version_zip "5.4.0" "Current"
-create_version_zip "5.5.0" "Beta"
+create_version_zip "5.6.0" "Stable"
+create_version_zip "5.7.0" "Latest"
 
 # Print summary
 echo ""
@@ -175,13 +178,12 @@ echo ""
 echo "Next steps:"
 echo "  1. Go to https://tak.gov/third-party-plugins"
 echo "  2. Upload each zip for the corresponding ATAK version:"
-echo "     - omnicot-pipeline-atak5.3.0-${TIMESTAMP}.zip → ATAK 5.3 pipeline"
-echo "     - omnicot-pipeline-atak5.4.0-${TIMESTAMP}.zip → ATAK 5.4 pipeline"
-echo "     - omnicot-pipeline-atak5.5.0-${TIMESTAMP}.zip → ATAK 5.5 pipeline"
+echo "     - omnicot-pipeline-atak5.6.0-${TIMESTAMP}.zip → ATAK 5.6 pipeline"
+echo "     - omnicot-pipeline-atak5.7.0-${TIMESTAMP}.zip → ATAK 5.7 pipeline"
 echo "  3. Wait for build artifacts (~5-10 minutes per version)"
 echo ""
 echo "Build configuration:"
-echo "  - takdevVersion: 2.+ (Pipeline compatible - required for ATAK 4.2+)"
+echo "  - takdevVersion: 3.+ (ATAK 5.6+ build env)"
 echo "  - TAK's official signing keystore"
 echo "  - All variants: CIV, MIL, GOV"
 echo ""
