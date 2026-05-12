@@ -8,10 +8,10 @@
 
 buildscript {
 
-    ext.PLUGIN_VERSION = "0.6"
-    ext.ATAK_VERSION = "5.4.0"
+    ext.PLUGIN_VERSION = "0.7"
+    ext.ATAK_VERSION = "5.7.0"
 
-    def takdevVersion = '2.+'
+    def takdevVersion = '3.+'
 
     def getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -65,7 +65,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.8.2'
+        classpath 'com.android.tools.build:gradle:8.13.0'
         if(isDevKitEnabled()) {
             classpath "com.atakmap.gradle:atak-gradle-takdev:${takdevVersion}"
         } else {
@@ -112,7 +112,7 @@ def supportedFlavors =
 ]
 
 android {
-    compileSdk 35
+    compileSdk 36
     namespace 'com.engindearing.omnicot'
 
     buildFeatures {
@@ -240,7 +240,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 35
+        targetSdkVersion 34
 
         def runTasks = gradle.startParameter.taskNames
         if(runTasks.toString().contains('bundle')) {
@@ -305,31 +305,58 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
+// ATAK 5.7 build env — pin transitive deps to versions ATAK Core ships,
+// otherwise proguarded release builds break in production. See
+// `Changes to the build environment for 5.6.0 from 5.5.0` TAK docs.
 configurations.all {
     resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == 'androidx.core') {
-            details.useVersion "1.15.0"
+        if (details.requested.group == 'androidx.core' && !details.requested.name.contains('core-viewtree')) {
+            details.useVersion '1.17.0'
         }
         if (details.requested.group == 'androidx.lifecycle') {
-            details.useVersion "2.8.7"
+            details.useVersion '2.9.4'
         }
         if (details.requested.group == 'androidx.fragment') {
-            details.useVersion "1.8.5"
+            details.useVersion '1.8.9'
+        }
+        if (details.requested.group == 'androidx.exifinterface') {
+            details.useVersion '1.4.1'
+        }
+        if (details.requested.group == 'androidx.localbroadcastmanager') {
+            details.useVersion '1.1.0'
+        }
+        if (details.requested.group == 'com.squareup.okhttp3') {
+            details.useVersion '4.11.0'
+        }
+        if (details.requested.group == 'com.squareup.okio') {
+            details.useVersion '3.2.0'
+        }
+        if (details.requested.group == 'org.greenrobot' && details.requested.name == 'eventbus') {
+            details.useVersion '3.2.0'
+        }
+        if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name == 'kotlin-reflect') {
+            details.useVersion '2.2.0'
+        }
+        if (details.requested.group == 'org.jetbrains.kotlinx' && details.requested.name == 'kotlinx-serialization-core') {
+            details.useVersion '1.7.3'
         }
         if (details.requested.group == 'androidx.recyclerview') {
-            details.useVersion "1.3.2"
+            details.useVersion '1.3.2'
         }
         if (details.requested.group == 'androidx.annotation') {
-            details.useVersion "1.8.2"
+            details.useVersion '1.8.2'
         }
     }
-}           
-        
+}
+
 configurations.implementation {
-       exclude group: 'androidx.core', module: 'core-ktx'
-       exclude group: 'androidx.core', module: 'core'
-       exclude group: 'androidx.fragment', module: 'fragment'
-       exclude group: 'androidx.lifecycle', module: 'lifecycle'
-       exclude group: 'androidx.lifecycle', module: 'lifecycle-process'
+    exclude group: 'androidx.core', module: 'core-ktx'
+    exclude group: 'androidx.core', module: 'core'
+    exclude group: 'androidx.fragment', module: 'fragment'
+    exclude group: 'androidx.lifecycle', module: 'lifecycle'
+    exclude group: 'androidx.lifecycle', module: 'lifecycle-process'
+    exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    exclude group: 'com.squareup.okio', module: 'okio'
+    exclude group: 'org.jetbrains.kotlinx', module: 'kotlinx-serialization-core'
 }       
 

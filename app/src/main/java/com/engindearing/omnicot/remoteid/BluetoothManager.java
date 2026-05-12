@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -230,7 +231,14 @@ public class BluetoothManager {
             filter.addAction(BluetoothDevice.ACTION_FOUND);
             filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
             filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-            context.registerReceiver(discoveryReceiver, filter);
+            // Android 14+ requires an explicit export flag for runtime receivers
+            // registered outside a service/activity, or the call throws
+            // SecurityException at runtime. See ATAK 5.6 build env docs.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(discoveryReceiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(discoveryReceiver, filter);
+            }
         }
 
         // Start discovery

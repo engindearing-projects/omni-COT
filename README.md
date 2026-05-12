@@ -47,21 +47,31 @@ Alert configuration interface:
 
 ## Requirements
 
-- ATAK-CIV 5.5.0 or later
+- ATAK-CIV (see version matrix below for the right plugin build)
 - Android SDK 21+ (Android 5.0 Lollipop)
-- Target SDK 34
 
 ## Installation
 
-### From Release
+Pick the plugin build that matches your installed ATAK version:
 
-1. Download the latest APK from [Releases](../../releases)
-2. Install via ADB:
+| Your ATAK version | Plugin release |
+|---|---|
+| 5.7.x | [v0.7-5.7](../../releases/tag/v0.7-5.7) |
+| 5.6.x | [v0.7-5.6](../../releases/tag/v0.7-5.6) |
+| 5.4.x – 5.5.x | [v0.6](../../releases/tag/v0.6) |
+
+The ATAK 5.6 build env changed substantially (new takdev plugin, AGP 8.13, compileSdk 36), so a single APK cannot span the pre-5.6 and post-5.6 range. v0.7 ships as **two separate signed APKs** built from the same source against ATAK 5.6 and 5.7 respectively.
+
+### Install steps
+
+1. Download the APK for your ATAK version from the table above
+2. Side-load on the device — tap the APK and allow install from this source, or:
    ```bash
-   adb install -r ATAK-Plugin-omnicot-0.1--5.5.0-civ-debug.apk
+   adb install -r ATAK-Plugin-omnicot-0.7--5.7.0-civ-release.apk
    ```
-3. Restart ATAK
-4. The OmniCOT button will appear in the toolbar
+3. Open ATAK → Settings → Tool Preferences → Plugins → enable **OmniCOT**
+
+The v0.7 builds are signed by the TAK Product Center Third Party Pipeline (TPP). ATAK will show a "third-party signed" badge in the plugin manager — that's expected for community-signed plugins.
 
 ### Building from Source
 
@@ -69,34 +79,27 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions.
 
 ### TAK.gov Pipeline Submission
 
-This repository includes a script that creates **three submission packages** for different ATAK versions:
+`make-pipeline-zip.sh` creates source archives for TPP submission:
 
 ```bash
 ./make-pipeline-zip.sh
 ```
 
-**Output:**
-- `omnicot-pipeline-atak5.3.0-{timestamp}.zip` - For ATAK 5.3.0 (stable)
-- `omnicot-pipeline-atak5.4.0-{timestamp}.zip` - For ATAK 5.4.0 (current)
-- `omnicot-pipeline-atak5.5.0-{timestamp}.zip` - For ATAK 5.5.0 (beta)
+**Output (current state):**
+- `omnicot-pipeline-atak5.6.0-{timestamp}.zip` — for ATAK 5.6
+- `omnicot-pipeline-atak5.7.0-{timestamp}.zip` — for ATAK 5.7
 
 Each zip contains:
-- Source code configured for the target ATAK version
-- Build configuration (build.gradle with `ATAK_VERSION` set appropriately)
+- Source code with `ATAK_VERSION` set for the target version
+- Build configuration (Gradle 8.14.3, AGP 8.13.0, takdev 3.+)
 - All resources and documentation
 - Excludes credentials (local.properties) and build artifacts
 
-**Upload to TAK.gov:**
-1. Go to https://tak.gov/third-party-plugins
+**Upload to TPP:**
+1. Go to https://tpp.tak.gov
 2. Upload each zip to the corresponding ATAK version pipeline
-3. Wait for TAK.gov to build and sign (~5-10 minutes per version)
-4. Download the official signed APKs for distribution
-
-**Benefits:**
-- Multi-version support: Works with ATAK 5.3, 5.4, and 5.5
-- Officially signed by TAK.gov
-- Passes Fortify security scanning
-- Ready for enterprise distribution
+3. Wait for TPP to build, security-scan, and sign (~5–10 minutes per version)
+4. Drop the returned signed APK into a new `releases/v<ver>/` directory and tag a GitHub release
 
 ## Usage
 
