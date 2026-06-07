@@ -585,24 +585,36 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
                 }
             }
 
-            // Convert Remote ID data to CoT event
-            CotEvent cotEvent = RemoteIdToCotConverter.convertToCotEvent(data);
+            // Convert Remote ID data to CoT event(s): a drone marker (when the aircraft GPS is
+            // valid) and/or an operator/pilot marker (when the operator location is valid).
+            List<CotEvent> cotEvents = RemoteIdToCotConverter.convertToCotEvents(data);
 
-            if (cotEvent != null) {
-                // Dispatch the CoT event to ATAK
-                cotDispatcher.dispatch(cotEvent);
+            if (cotEvents != null && !cotEvents.isEmpty()) {
+                boolean droneDispatched = false;
+                for (CotEvent cotEvent : cotEvents) {
+                    // Dispatch each CoT event to ATAK
+                    cotDispatcher.dispatch(cotEvent);
+                    Log.d(TAG, "Dispatched CoT event: " + cotEvent.getUID() +
+                            " type=" + cotEvent.getType());
+                    if (!droneDispatched && cotEvent.getUID() != null
+                            && !cotEvent.getUID().startsWith("RID-OP-")) {
+                        droneDispatched = true;
+                    }
+                }
 
-                Log.d(TAG, "Dispatched drone CoT event: " + cotEvent.getUID() +
-                        " at " + data.getUasLat() + ", " + data.getUasLon());
-
-                // Update dashboard
+                // Count a detection once per RID broadcast.
                 DashboardActivity.incrementDronesDetected();
-                DashboardActivity.addActivity("Drone " + data.getUniqueId() +
-                        " displayed on map");
+                if (droneDispatched) {
+                    DashboardActivity.addActivity("Drone " + data.getUniqueId() +
+                            " displayed on map");
+                } else {
+                    DashboardActivity.addActivity("Drone " + data.getUniqueId() +
+                            " - GPS not acquired, pilot location displayed");
+                }
             } else {
-                Log.w(TAG, "Failed to convert Remote ID data to CoT event");
+                Log.w(TAG, "No valid CoT events from Remote ID data (no drone or operator fix)");
                 Log.w(TAG, "RemoteIdData: " + data.toString());
-                DashboardActivity.addActivity("WARNING: Failed to convert drone data to CoT");
+                DashboardActivity.addActivity("WARNING: Drone detected but no usable location");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error handling Remote ID detection", e);
