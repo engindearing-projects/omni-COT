@@ -91,9 +91,14 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
         this.mapView = mapView;
         this.templateView = templateView;
 
-        // Get COT dispatcher for federating changes
-        // Use external dispatcher to send updates over the network to team members
-        cotDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
+        // Get the COT dispatcher. Use the INTERNAL dispatcher: it injects the CoT
+        // into ATAK's local map pipeline so the drone/pilot markers actually
+        // render on THIS device. The external dispatcher only sends outbound to
+        // servers and does NOT draw locally — using it alone is why detections
+        // never appeared on the map on a standalone ATAK. Detections are also
+        // forwarded to the external dispatcher (see handleRemoteIdDetection) so
+        // connected team members still receive the track.
+        cotDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
         if (cotDispatcher == null) {
             Log.e(TAG, "WARNING: CotDispatcher is NULL during initialization!");
             Log.e(TAG, "CotMapComponent may not be fully initialized yet.");
@@ -576,8 +581,8 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
             if (cotDispatcher == null) {
                 Log.e(TAG, "CotDispatcher is null! Cannot dispatch drone detection.");
                 Log.e(TAG, "This usually means CotMapComponent is not yet initialized.");
-                // Try to re-initialize the dispatcher
-                cotDispatcher = com.atakmap.android.cot.CotMapComponent.getExternalDispatcher();
+                // Try to re-initialize the dispatcher (internal = local map render)
+                cotDispatcher = com.atakmap.android.cot.CotMapComponent.getInternalDispatcher();
                 if (cotDispatcher == null) {
                     Log.e(TAG, "Failed to re-initialize CotDispatcher. Drone will not appear on map.");
                     DashboardActivity.addActivity("ERROR: Cannot display drone - CoT dispatcher unavailable");
@@ -592,8 +597,15 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
             if (cotEvents != null && !cotEvents.isEmpty()) {
                 boolean droneDispatched = false;
                 for (CotEvent cotEvent : cotEvents) {
-                    // Dispatch each CoT event to ATAK
+                    // Render on the local map (internal dispatcher).
                     cotDispatcher.dispatch(cotEvent);
+                    // Also forward to connected TAK servers / team members.
+                    try {
+                        com.atakmap.android.cot.CotMapComponent.getExternalDispatcher()
+                                .dispatch(cotEvent);
+                    } catch (Exception fe) {
+                        Log.w(TAG, "External forward failed (non-fatal)", fe);
+                    }
                     Log.d(TAG, "Dispatched CoT event: " + cotEvent.getUID() +
                             " type=" + cotEvent.getType());
                     if (!droneDispatched && cotEvent.getUID() != null
