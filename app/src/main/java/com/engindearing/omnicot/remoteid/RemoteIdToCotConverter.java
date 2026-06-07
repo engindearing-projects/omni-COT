@@ -6,6 +6,9 @@ import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Converts Remote ID drone detections to CoT (Cursor on Target) events for display in ATAK.
  */
@@ -19,15 +22,77 @@ public class RemoteIdToCotConverter {
     // a-u-A = Airborne, Unknown affiliation
     private static final String COT_TYPE_DRONE_UNKNOWN = "a-u-A-M-F-Q-r"; // Unknown air track, rotary wing
     private static final String COT_TYPE_DRONE_HOSTILE = "a-h-A-M-F-Q-r"; // Hostile air track, rotary wing
+    // Operator/pilot marker: unknown ground. ATAK maps a-u-G to a default ground icon.
+    private static final String COT_TYPE_OPERATOR_UNKNOWN = "a-u-G";
 
     /**
-     * Convert a Remote ID detection to a CoT event
+     * Convert a Remote ID detection to all relevant CoT events.
+     *
+     * <p>A single RID broadcast can yield up to two markers:
+     * <ul>
+     *   <li>a DRONE marker at the aircraft's lat/lon (only when the drone GPS is valid), and</li>
+     *   <li>an OPERATOR/PILOT marker at the operator's lat/lon (whenever that is valid).</li>
+     * </ul>
+     * The drone firmware frequently omits the aircraft fix until its GPS locks, but the RID
+     * System message still carries the operator location, so the pilot marker keeps a detection
+     * visible in ATAK even when the drone itself has no fix yet.
+     *
+     * @return a (possibly empty) list of CoT events to dispatch; never {@code null}.
      */
-    public static CotEvent convertToCotEvent(RemoteIdData data) {
-        if (data == null || !data.isValidLocation()) {
-            return null;
+    public static List<CotEvent> convertToCotEvents(RemoteIdData data) {
+        List<CotEvent> events = new ArrayList<>(2);
+        if (data == null) {
+            return events;
         }
 
+        boolean droneValid = data.isValidLocation();
+
+        if (droneValid) {
+            CotEvent drone = buildDroneCotEvent(data);
+            if (drone != null) {
+                events.add(drone);
+            }
+        }
+
+        if (isValidOperatorLocation(data)) {
+            CotEvent operator = buildOperatorCotEvent(data, droneValid);
+            if (operator != null) {
+                events.add(operator);
+            }
+        }
+
+        return events;
+    }
+
+    /**
+     * Backwards-compatible single-event entry point. Returns the drone CoT when the drone GPS
+     * is valid, otherwise the operator CoT (if available), otherwise {@code null}.
+     *
+     * @deprecated use {@link #convertToCotEvents(RemoteIdData)} which can emit both markers.
+     */
+    @Deprecated
+    public static CotEvent convertToCotEvent(RemoteIdData data) {
+        List<CotEvent> events = convertToCotEvents(data);
+        return events.isEmpty() ? null : events.get(0);
+    }
+
+    /**
+     * Validate operator (pilot) location: present, not NaN, not (0,0), within bounds.
+     */
+    private static boolean isValidOperatorLocation(RemoteIdData data) {
+        double lat = data.getOpLat();
+        double lon = data.getOpLon();
+        if (Double.isNaN(lat) || Double.isNaN(lon)) return false;
+        if (lat == 0.0 && lon == 0.0) return false;
+        if (lat < -90 || lat > 90) return false;
+        if (lon < -180 || lon > 180) return false;
+        return true;
+    }
+
+    /**
+     * Build the DRONE CoT event (airborne UAS). Caller must ensure the drone location is valid.
+     */
+    private static CotEvent buildDroneCotEvent(RemoteIdData data) {
         try {
             CotEvent cotEvent = new CotEvent();
 
@@ -156,6 +221,96 @@ public class RemoteIdToCotConverter {
     }
 
     /**
+     * Build the OPERATOR/PILOT CoT event (unknown ground) at the operator's reported location.
+     *
+     * @param data        the parsed Remote ID data (operator location assumed valid by caller)
+     * @param droneValid  whether the drone aircraft itself currently has a valid GPS fix; when
+     *                    false the remarks note that the drone GPS has not yet been acquired.
+     */
+    private static CotEvent buildOperatorCotEvent(RemoteIdData data, boolean droneValid) {
+        try {
+            CotEvent cotEvent = new CotEvent();
+
+            // UID derived from the drone UID with an -OP suffix so the two markers never collide
+            // and remain stably keyed to the same physical detection across updates.
+            String uid = "RID-OP-" + data.getUniqueId();
+            cotEvent.setUID(uid);
+
+            // Unknown ground - ATAK renders a default ground icon for a-u-G.
+            cotEvent.setType(COT_TYPE_OPERATOR_UNKNOWN);
+
+            // Sensor-detected, same as the drone marker.
+            cotEvent.setHow("h-s");
+
+            CoordinatedTime now = new CoordinatedTime();
+            cotEvent.setTime(now);
+            cotEvent.setStart(now);
+            // Operators move less than drones; keep the marker a bit longer (2 min).
+            cotEvent.setStale(new CoordinatedTime(now.getMilliseconds() + 120 * 1000));
+
+            GeoPoint geoPoint = new GeoPoint(
+                data.getOpLat(),
+                data.getOpLon(),
+                data.getOpHae(), // operator altitude MSL in meters
+                GeoPoint.AltitudeReference.HAE
+            );
+            cotEvent.setPoint(new CotPoint(geoPoint));
+
+            CotDetail detail = new CotDetail();
+
+            // Contact / callsign
+            CotDetail contact = new CotDetail("contact");
+            contact.setAttribute("callsign", generateOperatorCallsign(data));
+            detail.addChild(contact);
+
+            // Remote ID specific details (mirror the drone marker so this marker is self-describing)
+            CotDetail remoteIdDetail = new CotDetail("__remoteid");
+            remoteIdDetail.setAttribute("markerRole", "operator");
+            if (data.getSerialNumber() != null && !data.getSerialNumber().isEmpty()) {
+                remoteIdDetail.setAttribute("serialNumber", data.getSerialNumber());
+            }
+            if (data.getRemoteId() != null && !data.getRemoteId().isEmpty()) {
+                remoteIdDetail.setAttribute("operatorId", data.getRemoteId());
+            }
+            if (data.getOpId() != null && !data.getOpId().isEmpty()) {
+                remoteIdDetail.setAttribute("opId", data.getOpId());
+            }
+            if (data.getDescription() != null && !data.getDescription().isEmpty()) {
+                remoteIdDetail.setAttribute("description", data.getDescription());
+            }
+            remoteIdDetail.setAttribute("rssi", String.valueOf(data.getRssi()));
+            remoteIdDetail.setAttribute("recvMethod", data.getRecvMethodString());
+            remoteIdDetail.setAttribute("opLat", String.valueOf(data.getOpLat()));
+            remoteIdDetail.setAttribute("opLon", String.valueOf(data.getOpLon()));
+            remoteIdDetail.setAttribute("opAlt", String.format("%.1f", data.getOpHae()));
+            remoteIdDetail.setAttribute("opLocType", getOperatorLocationTypeString(data.getOpLocationType()));
+            remoteIdDetail.setAttribute("droneGpsValid", String.valueOf(droneValid));
+            remoteIdDetail.setAttribute("detectedBy", "gyb_detect");
+            remoteIdDetail.setAttribute("timestamp", String.valueOf(data.getTimestamp()));
+            detail.addChild(remoteIdDetail);
+
+            // Precision location source
+            CotDetail precisionLocation = new CotDetail("precisionlocation");
+            precisionLocation.setAttribute("altsrc", "GPS");
+            precisionLocation.setAttribute("geopointsrc", "GPS");
+            detail.addChild(precisionLocation);
+
+            // Remarks
+            CotDetail remarks = new CotDetail("remarks");
+            remarks.setInnerText(generateOperatorRemarks(data, droneValid));
+            detail.addChild(remarks);
+
+            cotEvent.setDetail(detail);
+
+            return cotEvent;
+
+        } catch (Exception e) {
+            android.util.Log.e(TAG, "Failed to convert RemoteIdData to operator CotEvent", e);
+            return null;
+        }
+    }
+
+    /**
      * Generate a callsign for the drone
      */
     private static String generateCallsign(RemoteIdData data) {
@@ -210,6 +365,54 @@ public class RemoteIdToCotConverter {
             remarks.append("Operator: ").append(String.format("%.6f", data.getOpLat()))
                    .append(", ").append(String.format("%.6f", data.getOpLon())).append("\n");
         }
+
+        return remarks.toString();
+    }
+
+    /**
+     * Generate a callsign for the operator/pilot marker.
+     * Mirrors the drone callsign id but with a PILOT- prefix.
+     */
+    private static String generateOperatorCallsign(RemoteIdData data) {
+        if (data.getSerialNumber() != null && !data.getSerialNumber().isEmpty()) {
+            return "PILOT-" + data.getSerialNumber().substring(0, Math.min(8, data.getSerialNumber().length()));
+        }
+        if (data.getUasId() != null && !data.getUasId().isEmpty()) {
+            String mac = data.getUasId().replace(":", "");
+            if (mac.length() >= 4) {
+                return "PILOT-" + mac.substring(mac.length() - 4);
+            }
+        }
+        if (data.getRemoteId() != null && !data.getRemoteId().isEmpty()) {
+            return "PILOT-" + data.getRemoteId();
+        }
+        return "PILOT-" + System.currentTimeMillis() % 10000;
+    }
+
+    /**
+     * Generate human-readable remarks for the operator/pilot marker.
+     */
+    private static String generateOperatorRemarks(RemoteIdData data, boolean droneValid) {
+        StringBuilder remarks = new StringBuilder();
+        remarks.append("Remote ID Operator/Pilot Location\n");
+
+        if (!droneValid) {
+            remarks.append("Drone GPS not yet acquired\n");
+        }
+
+        if (data.getSerialNumber() != null && !data.getSerialNumber().isEmpty()) {
+            remarks.append("Drone S/N: ").append(data.getSerialNumber()).append("\n");
+        }
+        if (data.getDescription() != null && !data.getDescription().isEmpty()) {
+            remarks.append("Desc: ").append(data.getDescription()).append("\n");
+        }
+
+        remarks.append("Operator: ").append(String.format("%.6f", data.getOpLat()))
+               .append(", ").append(String.format("%.6f", data.getOpLon())).append("\n");
+        remarks.append("Loc type: ").append(getOperatorLocationTypeString(data.getOpLocationType())).append("\n");
+
+        remarks.append("Detection: ").append(data.getRecvMethodString());
+        remarks.append(" (RSSI: ").append(data.getRssi()).append("dBm)\n");
 
         return remarks.toString();
     }

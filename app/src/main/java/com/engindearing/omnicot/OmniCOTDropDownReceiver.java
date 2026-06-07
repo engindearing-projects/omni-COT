@@ -497,15 +497,19 @@ public class OmniCOTDropDownReceiver extends DropDownReceiver implements DropDow
      */
     public void handleRemoteIdDetection(RemoteIdData data) {
         try {
-            // Convert Remote ID data to CoT event
-            CotEvent cotEvent = RemoteIdToCotConverter.convertToCotEvent(data);
+            // Convert Remote ID data to CoT events. A single broadcast can yield a drone marker
+            // (only when the aircraft GPS is valid) plus an operator/pilot marker (whenever the
+            // RID System message carries a valid operator location), so we dispatch all of them.
+            List<CotEvent> events = RemoteIdToCotConverter.convertToCotEvents(data);
 
-            if (cotEvent != null) {
-                // Dispatch the CoT event to ATAK
-                cotDispatcher.dispatch(cotEvent);
+            if (events != null && !events.isEmpty()) {
+                for (CotEvent cotEvent : events) {
+                    // Dispatch the CoT event to ATAK
+                    cotDispatcher.dispatch(cotEvent);
 
-                Log.d(TAG, "Dispatched drone CoT event: " + cotEvent.getUID() +
-                        " at " + data.getUasLat() + ", " + data.getUasLon());
+                    Log.d(TAG, "Dispatched RID CoT event: " + cotEvent.getUID() +
+                            " (" + cotEvent.getType() + ")");
+                }
 
                 // Update dashboard
                 DashboardActivity.incrementDronesDetected();
