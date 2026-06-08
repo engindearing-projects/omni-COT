@@ -137,9 +137,10 @@ create_version_zip() {
 rm -f /tmp/omnicot-zips-$$.txt
 
 # Create zips for ATAK 5.6 + 5.7
-echo "Creating submission zips for ATAK 5.6 and 5.7..."
+echo "Creating submission zips for ATAK 5.5, 5.6 and 5.7 (all from current branch)..."
 echo ""
 
+create_version_zip "5.5.0" "Supported"
 create_version_zip "5.6.0" "Stable"
 create_version_zip "5.7.0" "Latest"
 
